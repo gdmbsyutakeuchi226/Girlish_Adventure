@@ -64,6 +64,7 @@ public class PlayerController : MonoBehaviour {
         float enemyHalfScaleY = enemy.transform.lossyScale.y / 2.0f;
         if(transform.position.y - (halfscaleY - 0.1f) >= enemy.transform.position.y + (enemyHalfScaleY - 0.1f)){
             Destroy(enemy);
+            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
         }else{
             enemy.GetComponent<EnemyManager>().PlayerDamage(this);
         }
