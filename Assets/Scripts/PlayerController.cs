@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour {
     private bool jumpPressed;
     private bool jumpHeld;
     private bool jumpCutApplied;
+    private Animator anim;
 
     [Header("Ground Check")]
     public Transform groundCheck;
@@ -24,6 +25,7 @@ public class PlayerController : MonoBehaviour {
 
     void Start(){
         rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
     }
 
     void Update(){
@@ -32,8 +34,8 @@ public class PlayerController : MonoBehaviour {
     }
 
     void FixedUpdate(){
-        // 横移動
-        rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
+        anim.SetFloat("verticalSpeed", rb.linearVelocity.y);
+        Move();
 
         // ジャンプ開始
         if (jumpPressed && isGrounded){
@@ -49,10 +51,18 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
+    private void Move(){
+        // 横移動
+        rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
+        anim.SetBool("Walk", moveInput.x != 0.0f);
+    }
+
+
     private void OnCollisionEnter2D(Collision2D other){
         //地面の場合
         if(other.gameObject.tag == "Ground"){
             isGrounded = true;
+            anim.SetBool("Jump", false);
         }
         //敵の場合
         if(other.gameObject.tag == "Enemy"){
@@ -79,6 +89,7 @@ public class PlayerController : MonoBehaviour {
         if (context.started){
             jumpPressed = true;
             jumpHeld = true;
+            anim.SetBool("Jump", true);
         }
         else if (context.canceled){
             jumpHeld = false;
