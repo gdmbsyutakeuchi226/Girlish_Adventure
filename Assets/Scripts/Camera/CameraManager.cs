@@ -1,10 +1,10 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
 public class CameraManager : MonoBehaviour{
-    [SerializeField, Header("U“®‚·‚éŠÔ")]
+    [SerializeField, Header("æŒ¯å‹•ã™ã‚‹æ™‚é–“")]
     private float shakeTime;
-    [SerializeField, Header("U“®‚Ì‘å‚«‚³")]
+    [SerializeField, Header("æŒ¯å‹•ã®å¤§ãã•")]
     private float shakeMagnitude;
 
     [SerializeField] private PlayerController player;
@@ -22,7 +22,7 @@ public class CameraManager : MonoBehaviour{
         ShakeCheck();
         FollowPlayer();
     }
-    // HP‚ªŒ¸‚é‚ÆU“®‚³‚¹‚é(«—ˆ“I‚ÉDoTween‚Å’²®)
+    // HPãŒæ¸›ã‚‹ã¨æŒ¯å‹•ã•ã›ã‚‹(å°†æ¥çš„ã«DoTweenã§èª¿æ•´)
     private void ShakeCheck(){
         if(currentPlayerHP != player.GetHP()){
             currentPlayerHP = player.GetHP();
@@ -30,7 +30,7 @@ public class CameraManager : MonoBehaviour{
             StartCoroutine(Shake());
         }
     }
-    // U“®ŠÔ(«—ˆ“I‚ÉDoTween‚Å’²®)
+    // æŒ¯å‹•æ™‚é–“(å°†æ¥çš„ã«DoTweenã§èª¿æ•´)
     IEnumerator Shake(){
         Vector3 initpos = transform.position;
         while(shakeCount < shakeTime){
@@ -43,7 +43,7 @@ public class CameraManager : MonoBehaviour{
         }
         transform.position = initpos;
     }
-    //ƒJƒƒ‰’Ç](«—ˆ“I‚ÉChinemachineCamera‚Å’²ß)
+    //ã‚«ãƒ¡ãƒ©è¿½å¾“(å°†æ¥çš„ã«ChinemachineCameraã§èª¿ç¯€)
     private void FollowPlayer(){
         float x = player.transform.position.x;
         x = Mathf.Clamp(x, initpos.x, Mathf.Infinity);
