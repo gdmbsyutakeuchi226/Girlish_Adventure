@@ -46,7 +46,7 @@ public class PlayerController : MonoBehaviour {
     void FixedUpdate(){
         Move();
         LookMoveDirection();
-
+        Dead();
         // ジャンプ開始
         if (jumpPressed && isGrounded){
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
@@ -116,6 +116,12 @@ public class PlayerController : MonoBehaviour {
         sr.color = color;
         gameObject.layer = LayerMask.NameToLayer("Default");
         Debug.Log($"Check003 - 無敵時間終了 現在のgameObject.layer -> {gameObject.layer}");
+    }
+    //HPが0になった時の処理
+    private void Dead(){
+        if(hp <= 0){
+            this.gameObject.SetActive(false); //Destroyでも良かったのですが安全性としてオブジェクトを残す
+        }
     }
 
 
