@@ -12,6 +12,8 @@ public class PlayerController : MonoBehaviour {
     [Header("無敵時間・点滅")]
     public float damageTime = 3f;
     public float flashTime = 0.34f;
+    [Header("オブジェクトアサイン")]
+    public GameObject sword; // InspectorでSwordをアサイン
 
     private Rigidbody2D rb;
     private Vector2 moveInput;
@@ -27,6 +29,7 @@ public class PlayerController : MonoBehaviour {
     public LayerMask groundLayer;
 
     private bool isGrounded;
+    private bool isAttack;
 
     void Start(){
         rb = GetComponent<Rigidbody2D>();
@@ -41,6 +44,7 @@ public class PlayerController : MonoBehaviour {
         // アニメーション更新
         anim.SetBool("Walk", moveInput.x != 0.0f);
         anim.SetBool("Jump", !isGrounded);
+
     }
 
     void FixedUpdate(){
@@ -61,6 +65,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     private void Move(){
+        if (isAttack) return;
         // 横移動
         rb.AddForce(Vector2.right * moveInput.x * moveSpeed * 10f, ForceMode2D.Force);
         
@@ -98,7 +103,7 @@ public class PlayerController : MonoBehaviour {
             Destroy(enemy);
             rb.AddForce(Vector2.up * jumpForce * 0.5f, ForceMode2D.Impulse);
         }else{
-            enemy.GetComponent<EnemyManager>().PlayerDamage(this);
+            enemy.GetComponent<BaseEnemy>().Attack(this);
             StartCoroutine(Damage());
         }
     }
@@ -139,10 +144,25 @@ public class PlayerController : MonoBehaviour {
             jumpHeld = false;
         }
     }
+    public void OnAttack(InputAction.CallbackContext context){
+        if (context.started){
+            isAttack = true;
+            anim.SetTrigger("Attack"); // トリガー式
+            sword.SetActive(true); // 攻撃開始時に有効化
+        }
+    }
+
+
     public void Damage(int damage){
         hp = Mathf.Max(hp - damage, 0);
     }
     public int GetHP(){
         return hp;
     }
+    //攻撃の終了
+    public void EndAttack(){
+        isAttack = false;
+        sword.SetActive(false); // 攻撃終了時に無効化
+    }
+
 }

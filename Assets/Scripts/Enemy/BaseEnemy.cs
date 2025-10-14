@@ -1,12 +1,12 @@
-/* ============================================================
- * ƒXƒNƒŠƒvƒg–¼FBaseEnemy.cs
- * “GƒXƒNƒŠƒvƒg‚ÌŠî’êƒNƒ‰ƒX
- * ============================================================
+ï»¿/* =======================================
+ * ã‚¹ã‚¯ãƒªãƒ—ãƒˆåï¼šBaseEnemy.cs
+ * æ•µã‚¹ã‚¯ãƒªãƒ—ãƒˆã®åŸºåº•ã‚¯ãƒ©ã‚¹
+ * =======================================
  */
 using UnityEngine;
 
 public abstract class BaseEnemy : MonoBehaviour{ 
-    [Header("‹¤’Êƒpƒ‰ƒ[ƒ^")]
+    [Header("å…±é€šãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿")]
     public float moveSpeed;
     public int maxHP;
     public int attackPower;
@@ -36,7 +36,7 @@ public abstract class BaseEnemy : MonoBehaviour{
     public virtual void TakeDamage(int amonut){
         currentHP -= amonut;
         if(currentHP < 0){
-            Die(); // HP‚ª0‚É‚È‚Á‚½ê‡‚Í“G‚ğÁ–Å
+            Die(); // HPãŒ0ã«ãªã£ãŸå ´åˆã¯æ•µã‚’æ¶ˆæ»…
         }
     }
     protected virtual void Die(){
