@@ -15,6 +15,10 @@ public class PlayerController : MonoBehaviour {
     [Header("オブジェクトアサイン")]
     public GameObject sword; // InspectorでSwordをアサイン
 
+    private bool facingRight = true;
+    [SerializeField] private SwordFlipHandler swordHandler;
+    [SerializeField] private WeaponManager weaponManager;
+
     private Rigidbody2D rb;
     private Vector2 moveInput;
     private bool jumpPressed;
@@ -30,6 +34,7 @@ public class PlayerController : MonoBehaviour {
 
     private bool isGrounded;
     private bool isAttack;
+
 
     void Start(){
         rb = GetComponent<Rigidbody2D>();
@@ -76,13 +81,16 @@ public class PlayerController : MonoBehaviour {
     }
     private void LookMoveDirection(){
         if(moveInput.x > 0.0f){
+            facingRight = true;
             transform.eulerAngles = Vector3.zero;
         }else if(moveInput.x < 0.0f){
+            facingRight = false;
             transform.eulerAngles = new Vector3(0.0f, 180.0f, 0.0f);
         }
-    
+        // 剣の向きを同期
+        swordHandler?.UpdateSwordDirection(facingRight);
+        weaponManager.Flip(moveInput.x >= 0.0f);
     }
-
     private void CheckGround(){
         // 地面判定をPhysics2D.OverlapCircleで行う
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
@@ -149,6 +157,9 @@ public class PlayerController : MonoBehaviour {
             isAttack = true;
             anim.SetTrigger("Attack"); // トリガー式
             sword.SetActive(true); // 攻撃開始時に有効化
+
+            // 現在の移動入力方向を武器に渡す
+            weaponManager.Attack(moveInput);
         }
     }
 
@@ -162,6 +173,7 @@ public class PlayerController : MonoBehaviour {
     //攻撃の終了
     public void EndAttack(){
         isAttack = false;
+        anim.ResetTrigger("Attack");
         sword.SetActive(false); // 攻撃終了時に無効化
     }
 
