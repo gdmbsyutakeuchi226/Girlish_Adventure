@@ -9,11 +9,10 @@ public class PlayerController : MonoBehaviour {
     public float jumpForce = 12f;
     [Header("プレイヤーのHP")]
     public int hp = 10;
+    public int maxHP = 10;
     [Header("無敵時間・点滅")]
     public float damageTime = 3f;
     public float flashTime = 0.34f;
-    [Header("オブジェクトアサイン")]
-    public GameObject sword; // InspectorでSwordをアサイン
 
     private bool facingRight = true;
     [SerializeField] private SwordFlipHandler swordHandler;
@@ -34,7 +33,8 @@ public class PlayerController : MonoBehaviour {
 
     private bool isGrounded;
     private bool isAttack;
-
+    private bool isAttacking;
+    private bool isAirAttacking;
 
     void Start(){
         rb = GetComponent<Rigidbody2D>();
@@ -49,7 +49,12 @@ public class PlayerController : MonoBehaviour {
         // アニメーション更新
         anim.SetBool("Walk", moveInput.x != 0.0f);
         anim.SetBool("Jump", !isGrounded);
-
+        
+        // 空中攻撃中の状態管理
+        if (isAirAttacking && isAttacking) {
+            // 空中攻撃中はJumpステートを無効化
+            anim.SetBool("Jump", false);
+        }
     }
 
     void FixedUpdate(){
@@ -57,7 +62,7 @@ public class PlayerController : MonoBehaviour {
         LookMoveDirection();
         Dead();
         // ジャンプ開始
-        if (jumpPressed && isGrounded){
+        if (jumpPressed && isGrounded && !isAttacking){
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             jumpPressed = false;
             jumpCutApplied = false; // 新しいジャンプなのでリセット
@@ -70,7 +75,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     private void Move(){
-        if (isAttack) return;
+        if (isAttack || isAttacking) return;
         // 横移動
         rb.AddForce(Vector2.right * moveInput.x * moveSpeed * 10f, ForceMode2D.Force);
         
@@ -82,18 +87,22 @@ public class PlayerController : MonoBehaviour {
     private void LookMoveDirection(){
         if(moveInput.x > 0.0f){
             facingRight = true;
-            transform.eulerAngles = Vector3.zero;
+            if (sr != null) sr.flipX = false;
         }else if(moveInput.x < 0.0f){
             facingRight = false;
-            transform.eulerAngles = new Vector3(0.0f, 180.0f, 0.0f);
+            if (sr != null) sr.flipX = true;
         }
-        // 剣の向きを同期
+        // 剣の向きと武器の左右反転を同期
         swordHandler?.UpdateSwordDirection(facingRight);
-        weaponManager.Flip(moveInput.x >= 0.0f);
+        weaponManager.Flip(facingRight);
+
+        // 🔥 Animatorに状態を同期
+        anim.SetBool("FacingRight", facingRight);
     }
     private void CheckGround(){
         // 地面判定をPhysics2D.OverlapCircleで行う
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        anim.SetBool("IsGrounded", isGrounded);
     }
 
     private void OnCollisionEnter2D(Collision2D other){
@@ -137,7 +146,6 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
-
     // Invoke Unity Events 用
     public void OnMove(InputAction.CallbackContext context){
         moveInput = context.ReadValue<Vector2>();
@@ -153,14 +161,27 @@ public class PlayerController : MonoBehaviour {
         }
     }
     public void OnAttack(InputAction.CallbackContext context){
-        if (context.started){
-            isAttack = true;
-            anim.SetTrigger("Attack"); // トリガー式
-            sword.SetActive(true); // 攻撃開始時に有効化
-
-            // 現在の移動入力方向を武器に渡す
+        if (context.started && !isAttacking){
+            isAttacking = true;
+            isAirAttacking = !isGrounded;
+            StartCoroutine(AttackRoutine());
             weaponManager.Attack(moveInput);
         }
+    }
+
+    private IEnumerator AttackRoutine(){
+        anim.SetTrigger("Attack");
+        yield return new WaitForSeconds(0.05f); // トリガー維持を短く
+        
+        // 攻撃アニメ再生中はジャンプ抑制
+        // 空中攻撃の場合は少し長めに設定
+        float attackDuration = isGrounded ? 0.3f : 0.6f;
+        yield return new WaitForSeconds(attackDuration);
+        
+        // 攻撃終了時にトリガーをリセット
+        anim.ResetTrigger("Attack");
+        isAttacking = false;
+        isAirAttacking = false;
     }
 
 
@@ -174,7 +195,6 @@ public class PlayerController : MonoBehaviour {
     public void EndAttack(){
         isAttack = false;
         anim.ResetTrigger("Attack");
-        sword.SetActive(false); // 攻撃終了時に無効化
     }
 
 }
