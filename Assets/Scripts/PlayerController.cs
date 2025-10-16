@@ -183,11 +183,17 @@ public class PlayerController : MonoBehaviour {
         isAttacking = false;
         isAirAttacking = false;
     }
-
-
-    public void Damage(int damage){
-        hp = Mathf.Max(hp - damage, 0);
+    //ダメージ処理
+    public void TakeDamage(int damage){
+        hp = Mathf.Clamp(hp - damage, 0, maxHP);
+        UIManager.Instance?.UpdateHP(hp, maxHP);
     }
+    //回復処理
+    public void Heal(int healAmount){
+        hp = Mathf.Clamp(hp + healAmount, 0, maxHP);
+        UIManager.Instance?.UpdateHP(hp, maxHP);
+    }
+
     public int GetHP(){
         return hp;
     }

@@ -8,18 +8,16 @@ public class GameManager : MonoBehaviour {
     public GameState CurrentState { get; private set; }
 
     private void Awake(){
-        // GameManagerを永続化
-        DontDestroyOnLoad(gameObject);
+        if (Instance == null){
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
 
-        // UIManagerが存在しないならCanvasを生成
-        if (UIManager.Instance == null){
-            if (uiPrefab != null){
+            if (UIManager.Instance == null && uiPrefab != null){
                 var ui = Instantiate(uiPrefab);
                 DontDestroyOnLoad(ui);
-                Debug.Log("UIManager Canvas 生成成功");
-            }else{
-                Debug.LogError("GameManagerにUIプレハブが設定されていません！");
             }
+        }else{
+            Destroy(gameObject);
         }
     }
 

@@ -542,7 +542,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 457ef4585a39f944abd68573db81c6e9, type: 2}
+  m_Motion: {fileID: 7400000, guid: 0a2a8495563ccce44ad560c7a7caf200, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -764,9 +764,6 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 1
-    m_ConditionEvent: Attack
-    m_EventTreshold: 0
   - m_ConditionMode: 1
     m_ConditionEvent: Walk
     m_EventTreshold: 0

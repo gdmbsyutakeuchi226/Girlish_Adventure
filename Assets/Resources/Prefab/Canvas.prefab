@@ -763,7 +763,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HPBar
   slider: {fileID: 6881442830294136617}
-  player: {fileID: 0}
   valueHPText: {fileID: 2888282722298018204}
   maxHPText: {fileID: 4193597845066025577}
 --- !u!1 &3750235311744845042
@@ -902,7 +901,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 256
   m_TargetDisplay: 0
 --- !u!114 &4110707359797908279
 MonoBehaviour:
@@ -956,7 +955,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49adc9292a9e52a4ca2ffa599d652fb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  canvas: {fileID: 7452465657686244504}
   coinText: {fileID: 4251471093612662595}
+  hpBar: {fileID: 6470461086822507484}
 --- !u!1 &4928771452183628855
 GameObject:
   m_ObjectHideFlags: 0
