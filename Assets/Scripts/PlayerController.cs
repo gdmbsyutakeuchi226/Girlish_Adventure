@@ -26,8 +26,8 @@ public class PlayerController : MonoBehaviour {
     private Animator anim;
     private SpriteRenderer sr;
 
-    [Header("Ground Check")]
-    public Transform groundCheck;
+    //[Header("Ground Check オブジェクト参照")]
+    [SerializeField] private GroundCheck groundCheck; // ← 追加
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
@@ -40,12 +40,19 @@ public class PlayerController : MonoBehaviour {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         sr = GetComponent<SpriteRenderer>();
+
+        // GroundCheckイベント購読
+        if (groundCheck != null){
+            groundCheck.OnGroundedChanged += OnGroundedChanged;
+        }
+    }
+    private void OnDestroy(){
+        if (groundCheck != null){
+            groundCheck.OnGroundedChanged -= OnGroundedChanged;
+        }
     }
 
     void Update(){
-        // 地面判定
-        CheckGround();
-        
         // アニメーション更新
         anim.SetBool("Walk", moveInput.x != 0.0f);
         anim.SetBool("Jump", !isGrounded);
@@ -99,10 +106,9 @@ public class PlayerController : MonoBehaviour {
         // 🔥 Animatorに状態を同期
         anim.SetBool("FacingRight", facingRight);
     }
-    private void CheckGround(){
-        // 地面判定をPhysics2D.OverlapCircleで行う
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-        anim.SetBool("IsGrounded", isGrounded);
+    private void OnGroundedChanged(bool grounded){
+        isGrounded = grounded;
+        anim.SetBool("IsGrounded", grounded);
     }
 
     private void OnCollisionEnter2D(Collision2D other){
