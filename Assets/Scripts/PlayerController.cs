@@ -62,7 +62,7 @@ public class PlayerController : MonoBehaviour {
 
     void Update(){
         // アニメーション更新
-        anim.SetBool("Walk", moveInput.x != 0.0f);
+        anim.SetBool("Walk", Mathf.Abs(moveInput.x) > 0.1f);
         anim.SetBool("Jump", !isGrounded);
         
         // 空中攻撃中の状態管理
@@ -72,48 +72,60 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
-    void FixedUpdate(){
-        Move();
+    private void FixedUpdate(){
+        // 動く床の速度補正を適用
+        ApplyMovingPlatformVelocity();
+        
+        if (!isAttacking){
+            MoveAlongSlope(); // ← 坂道も平地も兼ねる
+        }
         LookMoveDirection();
         Dead();
+
         // ジャンプ開始
         if (jumpPressed && isGrounded && !isAttacking){
+            Debug.Log($"ジャンプ実行: isGrounded={isGrounded}, jumpPressed={jumpPressed}, isAttacking={isAttacking}");
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             jumpPressed = false;
-            jumpCutApplied = false; // 新しいジャンプなのでリセット
+            jumpCutApplied = false;
         }
-        // 可変ジャンプ処理
+
+        // 可変ジャンプ
         if (!jumpHeld && !jumpCutApplied && rb.linearVelocity.y > 0){
             rb.AddForce(Vector2.down * rb.linearVelocity.y * 0.5f, ForceMode2D.Impulse);
-            jumpCutApplied = true; // 一度だけ適用
-        }
-        
-        // 差分補正方式: 接地中は前フレームの床速度を打ち消し、新しい床速度を適用
-        if (groundCheck != null){
-            float groundVX = isGrounded ? groundCheck.GetGroundVelocity().x : 0f;
-
-            // まず前回適用した床速度を取り除く
-            if (appliedGroundVelocityX != 0f){
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x - appliedGroundVelocityX, rb.linearVelocity.y);
-            }
-            // 今回の床速度を適用（接地中のみ非ゼロ）
-            if (groundVX != 0f){
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x + groundVX, rb.linearVelocity.y);
-            }
-            appliedGroundVelocityX = groundVX;
+            jumpCutApplied = true;
         }
     }
-
-    private void Move(){
+    private void MoveAlongSlope(){
         if (isAttack || isAttacking) return;
-        // 横移動
-        rb.AddForce(Vector2.right * moveInput.x * moveSpeed * 10f, ForceMode2D.Force);
+
+        // 基本的な水平移動
+        Vector2 moveDir = new Vector2(moveInput.x, 0f);
         
+        // 接地時のみ坂道処理を適用
+        if (groundCheck.IsGrounded && groundCheck.GroundNormal != Vector2.up){
+            // 坂の法線に垂直な方向（＝坂の接線）を取得
+            Vector2 slopeDir = Vector2.Perpendicular(groundCheck.GroundNormal);
+            
+            // 上り坂側を下向きに補正
+            if (slopeDir.y > 0)
+                slopeDir *= -1f;
+            
+            // 坂に沿って移動方向を調整（水平入力がある場合のみ）
+            if (Mathf.Abs(moveInput.x) > 0.1f){
+                moveDir = slopeDir.normalized * moveInput.x;
+            }
+        }
+
+        // 移動力を適用
+        rb.AddForce(moveDir * moveSpeed * 10f, ForceMode2D.Force);
+
         // 速度制限
         if (Mathf.Abs(rb.linearVelocity.x) > moveSpeed){
             rb.linearVelocity = new Vector2(Mathf.Sign(rb.linearVelocity.x) * moveSpeed, rb.linearVelocity.y);
         }
     }
+
     private void LookMoveDirection(){
         if(moveInput.x > 0.0f){
             facingRight = true;
@@ -130,6 +142,7 @@ public class PlayerController : MonoBehaviour {
         anim.SetBool("FacingRight", facingRight);
     }
     private void OnGroundedChanged(bool grounded){
+        Debug.Log($"接地状態変化: {grounded}");
         isGrounded = grounded;
         anim.SetBool("IsGrounded", grounded);
     }
@@ -248,6 +261,23 @@ public class PlayerController : MonoBehaviour {
         isAttack = false;
         anim.ResetTrigger("Attack");
     }
+    // 動く床の速度補正を適用
+    private void ApplyMovingPlatformVelocity(){
+        if (!isGrounded) return;
+        
+        // 足元の動く床の速度を取得
+        Vector2 groundVelocity = groundCheck.GetGroundVelocity();
+        
+        // 前フレームで適用した速度を相殺
+        rb.linearVelocity -= new Vector2(appliedGroundVelocityX, 0f);
+        
+        // 新しい床の速度を適用
+        rb.linearVelocity += groundVelocity;
+        
+        // 次フレーム用に記録
+        appliedGroundVelocityX = groundVelocity.x;
+    }
+
     private IEnumerator DropThroughPlatform(){
         // すり抜け中フラグ
         isDropping = true;
@@ -282,4 +312,5 @@ public class PlayerController : MonoBehaviour {
         yield return new WaitForSeconds(0.05f);
         isDropping = false;
     }
+
 }
