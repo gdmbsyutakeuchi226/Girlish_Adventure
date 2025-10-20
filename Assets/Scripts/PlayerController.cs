@@ -13,8 +13,11 @@ public class PlayerController : MonoBehaviour {
     [Header("無敵時間・点滅")]
     public float damageTime = 3f;
     public float flashTime = 0.34f;
+    [Header("すり抜け時間")]
+    [SerializeField] private float dropThroughTime = 0.3f; // すり抜け時間
 
     private bool facingRight = true;
+    [Header("攻撃アクション反転など")]
     [SerializeField] private SwordFlipHandler swordHandler;
     [SerializeField] private WeaponManager weaponManager;
 
@@ -25,11 +28,16 @@ public class PlayerController : MonoBehaviour {
     private bool jumpCutApplied;
     private Animator anim;
     private SpriteRenderer sr;
+    // 動く床の水平速度を前フレームからの差分で補正するための記録
+    private float appliedGroundVelocityX = 0f;
 
-    //[Header("Ground Check オブジェクト参照")]
+    [Header("Ground Check オブジェクト参照")]
     [SerializeField] private GroundCheck groundCheck; // ← 追加
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
+
+    private bool isDropping = false;
+    private PlatformEffector2D currentEffector; // 足元の床Effector参照
 
     private bool isGrounded;
     private bool isAttack;
@@ -78,6 +86,21 @@ public class PlayerController : MonoBehaviour {
         if (!jumpHeld && !jumpCutApplied && rb.linearVelocity.y > 0){
             rb.AddForce(Vector2.down * rb.linearVelocity.y * 0.5f, ForceMode2D.Impulse);
             jumpCutApplied = true; // 一度だけ適用
+        }
+        
+        // 差分補正方式: 接地中は前フレームの床速度を打ち消し、新しい床速度を適用
+        if (groundCheck != null){
+            float groundVX = isGrounded ? groundCheck.GetGroundVelocity().x : 0f;
+
+            // まず前回適用した床速度を取り除く
+            if (appliedGroundVelocityX != 0f){
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x - appliedGroundVelocityX, rb.linearVelocity.y);
+            }
+            // 今回の床速度を適用（接地中のみ非ゼロ）
+            if (groundVX != 0f){
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x + groundVX, rb.linearVelocity.y);
+            }
+            appliedGroundVelocityX = groundVX;
         }
     }
 
@@ -145,16 +168,33 @@ public class PlayerController : MonoBehaviour {
         gameObject.layer = LayerMask.NameToLayer("Default");
         Debug.Log($"Check003 - 無敵時間終了 現在のgameObject.layer -> {gameObject.layer}");
     }
-    //HPが0になった時の処理
+    //HPが0になった時の処理、Failureにする
     private void Dead(){
         if(hp <= 0){
             this.gameObject.SetActive(false); //Destroyでも良かったのですが安全性としてオブジェクトを残す
+            //Failure処理へ
         }
     }
+    //下に落下したらFailureにする
+    private void OnBecameInvisible(){
+        Camera camera = Camera.main;
+        Debug.Log($"camera.name => {camera.name}");
+        if(camera.name == "Main Camera" && camera.transform.position.y > transform.position.y){
+            Destroy(gameObject);
+            //Failure処理へ
+        }
+    }
+
+
 
     // Invoke Unity Events 用
     public void OnMove(InputAction.CallbackContext context){
         moveInput = context.ReadValue<Vector2>();
+
+        // ↓キー押下中の処理チェック
+        if (moveInput.y < -0.5f && !isDropping && groundCheck.IsGrounded){
+            StartCoroutine(DropThroughPlatform());
+        }
     }
 
     public void OnJump(InputAction.CallbackContext context){
@@ -208,5 +248,28 @@ public class PlayerController : MonoBehaviour {
         isAttack = false;
         anim.ResetTrigger("Attack");
     }
+    private IEnumerator DropThroughPlatform(){
+        // すり抜け中フラグ
+        isDropping = true;
 
+        // GroundCheckの下にあるPlatformEffectorを検出
+        Collider2D hit = Physics2D.OverlapCircle(
+            groundCheck.transform.position,
+            groundCheck.checkRadius,
+            groundCheck.groundLayer
+        );
+
+        if (hit != null){
+            currentEffector = hit.GetComponent<PlatformEffector2D>();
+            if (currentEffector != null)
+            {
+                // 一時的に床を180°反転して衝突を無効化
+                currentEffector.rotationalOffset = 180f;
+                yield return new WaitForSeconds(dropThroughTime);
+                currentEffector.rotationalOffset = 0f;
+            }
+        }
+
+        isDropping = false;
+    }
 }
