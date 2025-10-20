@@ -104,28 +104,45 @@ public class PlayerController : MonoBehaviour {
         
         // 接地時のみ坂道処理を適用
         if (groundCheck.IsGrounded && groundCheck.GroundNormal != Vector2.up){
-            // 坂の法線に垂直な方向（＝坂の接線）を取得
-            Vector2 slopeDir = Vector2.Perpendicular(groundCheck.GroundNormal);
-            
-            // 上り坂側を下向きに補正
-            if (slopeDir.y > 0)
-                slopeDir *= -1f;
-            
-            // 坂に沿って移動方向を調整（水平入力がある場合のみ）
-            if (Mathf.Abs(moveInput.x) > 0.1f){
-                moveDir = slopeDir.normalized * moveInput.x;
-            }
-        }
 
-        // 移動力を適用
-        rb.AddForce(moveDir * moveSpeed * 10f, ForceMode2D.Force);
+            // 坂の接線を2方向取得
+            Vector2 slopeDir1 = Vector2.Perpendicular(groundCheck.GroundNormal).normalized;
+            Vector2 slopeDir2 = -slopeDir1;
+
+            // 入力方向に近い方を選択
+            Vector2 slopeDir = (Mathf.Sign(moveInput.x) == Mathf.Sign(slopeDir1.x)) ? slopeDir1 : slopeDir2;
+
+            // 入力に応じた方向
+            moveDir = slopeDir * Mathf.Abs(moveInput.x);
+
+            // 坂の傾斜角に応じて加速を補正
+            float slopeAngle = Vector2.Angle(groundCheck.GroundNormal, Vector2.up);
+            float slopeBoost = Mathf.Clamp01(slopeAngle / 45f); // 最大45°で1倍
+            float adjustedSpeed = moveSpeed * (1f + slopeBoost * 0.5f); // 最大1.5倍補正
+
+            rb.AddForce(moveDir * adjustedSpeed * 10f, ForceMode2D.Force);
+        }else{
+            moveDir = new Vector2(moveInput.x, 0f);
+            rb.AddForce(moveDir * moveSpeed * 10f, ForceMode2D.Force);
+        }
 
         // 速度制限
         if (Mathf.Abs(rb.linearVelocity.x) > moveSpeed){
             rb.linearVelocity = new Vector2(Mathf.Sign(rb.linearVelocity.x) * moveSpeed, rb.linearVelocity.y);
         }
     }
+    private void SlideDownSlope(){
+        // 坂でなければ無効
+        float slopeAngle = Vector2.Angle(groundCheck.GroundNormal, Vector2.up);
+        if (slopeAngle < 5f) return; // 平地は除外
 
+        // 坂方向（重力に沿って）滑る
+        Vector2 slopeDir = Vector2.Perpendicular(groundCheck.GroundNormal);
+        if (slopeDir.y > 0)
+            slopeDir *= -1f;
+
+        rb.AddForce(slopeDir.normalized * moveSpeed * 8f, ForceMode2D.Force);
+    }
     private void LookMoveDirection(){
         if(moveInput.x > 0.0f){
             facingRight = true;
@@ -207,6 +224,9 @@ public class PlayerController : MonoBehaviour {
         // ↓キー押下中の処理チェック
         if (moveInput.y < -0.5f && !isDropping && groundCheck.IsGrounded){
             StartCoroutine(DropThroughPlatform());
+        }
+        if (moveInput.y < -0.5f && groundCheck.IsGrounded){
+            SlideDownSlope();
         }
     }
 
