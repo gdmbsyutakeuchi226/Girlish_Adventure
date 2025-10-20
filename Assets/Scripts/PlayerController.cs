@@ -260,16 +260,26 @@ public class PlayerController : MonoBehaviour {
         );
 
         if (hit != null){
-            currentEffector = hit.GetComponent<PlatformEffector2D>();
-            if (currentEffector != null)
-            {
-                // 一時的に床を180°反転して衝突を無効化
-                currentEffector.rotationalOffset = 180f;
+            // PlatformEffector と PlatformType を探す（親にある可能性があるので GetComponentInParent を使用）
+            PlatformType platformType = hit.GetComponentInParent<PlatformType>();
+            PlatformEffector2D eff = hit.GetComponentInParent<PlatformEffector2D>();
+
+            // プラットフォームが存在し、かつ drop を許可している場合だけ落下処理を行う
+            if (platformType != null && platformType.allowDropThrough && eff != null){
+                // 回転させて一時的に衝突方向を反転（落下可能にする）
+                float originalOffset = eff.rotationalOffset;
+                eff.rotationalOffset = 180f;
+
+                // 少し時間を置いて下に抜ける
                 yield return new WaitForSeconds(dropThroughTime);
-                currentEffector.rotationalOffset = 0f;
+
+                // 元に戻す
+                eff.rotationalOffset = originalOffset;
             }
         }
 
+        // 小さな猶予を置いて二重呼び出しを防ぐ（調整可）
+        yield return new WaitForSeconds(0.05f);
         isDropping = false;
     }
 }
