@@ -7,6 +7,7 @@
  * ======================================= */
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public abstract class BaseEnemy : MonoBehaviour {
     [Header("共通パラメータ")]
     [SerializeField] protected float moveSpeed = 2f;
@@ -17,9 +18,7 @@ public abstract class BaseEnemy : MonoBehaviour {
     protected int currentHP;
     protected Rigidbody2D rb;
     protected Vector2 moveDirection = Vector2.left;
-
-    // 各敵固有の動的状態を保持
-    protected MoveState moveState = new MoveState();
+    protected MoveState moveState;
 
     public Transform Player { get; set; }
     public Rigidbody2D Rb => rb;
@@ -30,23 +29,37 @@ public abstract class BaseEnemy : MonoBehaviour {
         rb = GetComponent<Rigidbody2D>();
         currentHP = maxHP;
 
-        // MoveState 初期化（個別データ生成）
-        moveState = new MoveState();
-        moveBehavior?.Initialize(this, moveState);
+        if (moveBehavior != null){
+            // MoveState を生成（SO 側でカスタム初期化可能）
+            moveState = moveBehavior.CreateState();
+            // 必要なら SO 側で追加初期化
+            moveBehavior.Initialize(this, moveState);
+        }else{
+            // 安全策：null じゃない空の状態を作る（必要に応じて）
+            moveState = new MoveState();
+        }
     }
 
     protected virtual void FixedUpdate(){
         moveBehavior?.Move(this, moveState);
     }
 
+    // ====== ダメージ処理 ======
     public virtual void TakeDamage(int amount){
         currentHP -= amount;
-        if (currentHP <= 0) Die();
+        if (currentHP <= 0)
+            Die();
     }
 
     protected virtual void Die(){
         Destroy(gameObject);
     }
 
-    public abstract void Attack(PlayerController player);
+    // ====== 攻撃処理 ======
+    public virtual void Attack(PlayerController player){
+        if (player != null)
+        {
+            player.TakeDamage(attackPower);
+        }
+    }
 }

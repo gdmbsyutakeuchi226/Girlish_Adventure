@@ -14,4 +14,9 @@ public class Move_FlySin : MoveBehaviorSO {
         float y = Mathf.Sin(Time.time * frequency + state.timeOffset) * amplitude;
         enemy.Rb.linearVelocity = new Vector2(enemy.MoveDirection.x * enemy.MoveSpeed, y);
     }
+    public override MoveState CreateState(){
+        var s = base.CreateState();
+        s.timeOffset = Random.Range(0f, Mathf.PI * 2f);
+        return s;
+    }
 }

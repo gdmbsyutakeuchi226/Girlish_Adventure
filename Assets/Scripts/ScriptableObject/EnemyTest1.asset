@@ -14,5 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Move_GroundPatrol
   groundLayer:
     serializedVersion: 2
-    m_Bits: 0
-  edgeCheckDistance: 0.5
+    m_Bits: 256
+  edgeCheckDistance: 0.8
+  wallCheckDistance: 0.5
+  rayOffsetY: 0.1
+  wallRayHeight: 0.2
+  reverseCooldown: 0.3
