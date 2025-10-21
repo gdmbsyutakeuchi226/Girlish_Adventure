@@ -1,4 +1,10 @@
-﻿using System.Collections;
+﻿/* =======================================
+ * ファイル名 : PlayerController.cs
+ * 概要 : プレイヤースクリプト
+ * Date : 2025/10/21
+ * Version : 0.01
+ * ======================================= */
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -82,6 +88,9 @@ public class PlayerController : MonoBehaviour {
         LookMoveDirection();
         Dead();
 
+        // 物理演算による意図しないジャンプを防止
+        PreventUnintendedJump();
+
         // ジャンプ開始
         if (jumpPressed && isGrounded && !isAttacking){
             Debug.Log($"ジャンプ実行: isGrounded={isGrounded}, jumpPressed={jumpPressed}, isAttacking={isAttacking}");
@@ -96,6 +105,26 @@ public class PlayerController : MonoBehaviour {
             jumpCutApplied = true;
         }
     }
+
+    // 物理演算による意図しないジャンプを防止
+    private void PreventUnintendedJump(){
+        if (!isGrounded) return;
+        
+        // 坂の頂上付近での物理的な跳ね返りを抑制
+        if (groundCheck.IsGrounded && groundCheck.GroundNormal != Vector2.up){
+            float slopeAngle = Vector2.Angle(groundCheck.GroundNormal, Vector2.up);
+            
+            // 平坦に近い部分（25度以下）で垂直速度を抑制
+            if (slopeAngle < 25f && rb.linearVelocity.y > 0.5f){
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+            }
+            
+            // 坂道での過度な垂直速度を抑制
+            if (slopeAngle >= 25f && slopeAngle <= 65f && Mathf.Abs(rb.linearVelocity.y) > 3f){
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
+            }
+        }
+    }
     private void MoveAlongSlope(){
         if (isAttack || isAttacking) return;
 
@@ -104,29 +133,38 @@ public class PlayerController : MonoBehaviour {
         
         // 接地時のみ坂道処理を適用
         if (groundCheck.IsGrounded && groundCheck.GroundNormal != Vector2.up){
-
-            // 坂の接線を2方向取得
-            Vector2 slopeDir1 = Vector2.Perpendicular(groundCheck.GroundNormal).normalized;
-            Vector2 slopeDir2 = -slopeDir1;
-
-            // 入力方向に近い方を選択
-            Vector2 slopeDir = (Mathf.Sign(moveInput.x) == Mathf.Sign(slopeDir1.x)) ? slopeDir1 : slopeDir2;
-
-            // 入力に応じた方向
-            moveDir = slopeDir * Mathf.Abs(moveInput.x);
-
-            // 坂の傾斜角に応じて加速を補正
             float slopeAngle = Vector2.Angle(groundCheck.GroundNormal, Vector2.up);
-            float slopeBoost = Mathf.Clamp01(slopeAngle / 45f); // 最大45°で1倍
-            float adjustedSpeed = moveSpeed * (1f + slopeBoost * 0.5f); // 最大1.5倍補正
+            
+            // 急すぎる坂（70度以上）では通常移動に切り替え
+            if (slopeAngle > 70f){
+                moveDir = new Vector2(moveInput.x, 0f);
+                rb.AddForce(moveDir * moveSpeed * 10f, ForceMode2D.Force);
+            }
+            else {
+                // 坂の接線を2方向取得
+                Vector2 slopeDir1 = Vector2.Perpendicular(groundCheck.GroundNormal).normalized;
+                Vector2 slopeDir2 = -slopeDir1;
 
-            rb.AddForce(moveDir * adjustedSpeed * 10f, ForceMode2D.Force);
+                // 入力方向に近い方を選択
+                Vector2 slopeDir = (Mathf.Sign(moveInput.x) == Mathf.Sign(slopeDir1.x)) ? slopeDir1 : slopeDir2;
+
+                // 入力に応じた方向（加速補正なし、一定速度）
+                moveDir = slopeDir * Mathf.Abs(moveInput.x);
+
+                // 坂道でも一定速度で移動（加速補正を削除）
+                rb.AddForce(moveDir * moveSpeed * 10f, ForceMode2D.Force);
+                
+                // 坂の頂上付近での物理演算によるジャンプを完全に抑制
+                if (slopeAngle < 15f && Mathf.Abs(rb.linearVelocity.y) > 1f){
+                    rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+                }
+            }
         }else{
             moveDir = new Vector2(moveInput.x, 0f);
             rb.AddForce(moveDir * moveSpeed * 10f, ForceMode2D.Force);
         }
 
-        // 速度制限
+        // 速度制限（坂道でも一定速度を維持）
         if (Mathf.Abs(rb.linearVelocity.x) > moveSpeed){
             rb.linearVelocity = new Vector2(Mathf.Sign(rb.linearVelocity.x) * moveSpeed, rb.linearVelocity.y);
         }

@@ -26,12 +26,9 @@ public class GroundCheck : MonoBehaviour{
             // 現在の接地オブジェクトを記録
             currentGroundCollider = hit;
             
-            // 下方向へ短いRaycastで坂の法線を取得
-            RaycastHit2D rayHit = Physics2D.Raycast(checkPoint.position, Vector2.down, 0.3f, groundLayer);
-            if (rayHit)
-                GroundNormal = rayHit.normal; // 坂の角度方向
-            else
-                GroundNormal = Vector2.up;
+            // 複数のRaycastでより安定した法線を取得
+            Vector2 averageNormal = GetStableGroundNormal();
+            GroundNormal = averageNormal;
         }else{
             currentGroundCollider = null;
             GroundNormal = Vector2.up;
@@ -42,6 +39,46 @@ public class GroundCheck : MonoBehaviour{
             OnGroundedChanged?.Invoke(IsGrounded);
             prevGrounded = IsGrounded;
         }
+    }
+
+    // 安定した地面の法線を取得する
+    private Vector2 GetStableGroundNormal(){
+        Vector2 centerPos = checkPoint.position;
+        Vector2 totalNormal = Vector2.zero;
+        int validHits = 0;
+        
+        // 複数の位置でRaycastを実行
+        Vector2[] rayPositions = {
+            centerPos,
+            centerPos + Vector2.left * 0.1f,
+            centerPos + Vector2.right * 0.1f,
+            centerPos + Vector2.left * 0.2f,
+            centerPos + Vector2.right * 0.2f
+        };
+        
+        foreach (Vector2 pos in rayPositions){
+            RaycastHit2D rayHit = Physics2D.Raycast(pos, Vector2.down, 0.4f, groundLayer);
+            if (rayHit){
+                totalNormal += rayHit.normal;
+                validHits++;
+            }
+        }
+        
+        // 平均値を計算し、急激な変化を抑制
+        if (validHits > 0){
+            Vector2 newNormal = (totalNormal / validHits).normalized;
+            
+            // 前フレームの法線との差を制限（急激な変化を防ぐ）
+            float angleDiff = Vector2.Angle(GroundNormal, newNormal);
+            if (angleDiff > 30f){ // 30度以上の急激な変化は制限
+                float lerpFactor = 30f / angleDiff;
+                newNormal = Vector2.Lerp(GroundNormal, newNormal, lerpFactor).normalized;
+            }
+            
+            return newNormal;
+        }
+        
+        return Vector2.up;
     }
 
     // 足元の動く床の速度を取得（なければゼロ）
