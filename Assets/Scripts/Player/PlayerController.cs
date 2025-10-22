@@ -30,6 +30,10 @@ public class PlayerController : MonoBehaviour {
     [SerializeField] private SwordFlipHandler swordHandler;
     [SerializeField] private WeaponManager weaponManager;
 
+    [SerializeField] private GameObject playerBulletPrefab;
+    [SerializeField] private Transform firePoint;
+    [SerializeField] private int specialCost = 1;
+
     private Rigidbody2D rb;
     private Vector2 moveInput;
     private bool jumpPressed;
@@ -285,6 +289,20 @@ public class PlayerController : MonoBehaviour {
             weaponManager.Attack(moveInput);
         }
     }
+    public void OnSpecialA(InputAction.CallbackContext context){
+        Debug.Log($"localScale.x = {transform.localScale.x}, spriteFlipX = {GetComponent<SpriteRenderer>()?.flipX}");
+        if (!context.performed) return;
+        if (sp < specialCost) return;
+
+        UseSpecial(specialCost);
+
+        var bulletObj = Instantiate(playerBulletPrefab, firePoint.position, Quaternion.identity);
+        var bullet = bulletObj.GetComponent<PlayerBullet>();
+        if (bullet != null){
+            Vector2 dir = facingRight ? Vector2.right : Vector2.left;
+            bullet.Setup(dir);
+        }
+    }
 
     private IEnumerator AttackRoutine(){
         anim.SetTrigger("Attack");
@@ -306,7 +324,7 @@ public class PlayerController : MonoBehaviour {
         UIManager.Instance?.UpdateHP(hp, maxHP);
     }
     //回復処理
-    public void Heal(int healAmount){
+    public void HealHP(int healAmount){
         hp = Mathf.Clamp(hp + healAmount, 0, maxHP);
         UIManager.Instance?.UpdateHP(hp, maxHP);
     }
