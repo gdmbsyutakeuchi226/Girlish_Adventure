@@ -14,6 +14,7 @@ public abstract class BaseEnemy : MonoBehaviour {
     [SerializeField] protected int maxHP = 10;
     [SerializeField] protected int attackPower = 1;
     [SerializeField] protected MoveBehaviorSO moveBehavior;
+    [SerializeField] protected ShootBehaviorSO shootBehavior;
 
     protected int currentHP;
     protected Rigidbody2D rb;
@@ -39,7 +40,9 @@ public abstract class BaseEnemy : MonoBehaviour {
             moveState = new MoveState();
         }
     }
-
+    protected virtual void Update(){
+        shootBehavior?.Shoot(this);
+    }
     protected virtual void FixedUpdate(){
         moveBehavior?.Move(this, moveState);
     }

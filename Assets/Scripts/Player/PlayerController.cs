@@ -16,6 +16,9 @@ public class PlayerController : MonoBehaviour {
     [Header("プレイヤーのHP")]
     public int hp = 10;
     public int maxHP = 10;
+    [Header("プレイヤーのSP")]
+    public int sp = 6;
+    public int maxSP = 6;
     [Header("無敵時間・点滅")]
     public float damageTime = 3f;
     public float flashTime = 0.34f;
@@ -252,9 +255,6 @@ public class PlayerController : MonoBehaviour {
             //Failure処理へ
         }
     }
-
-
-
     // Invoke Unity Events 用
     public void OnMove(InputAction.CallbackContext context){
         moveInput = context.ReadValue<Vector2>();
@@ -310,10 +310,24 @@ public class PlayerController : MonoBehaviour {
         hp = Mathf.Clamp(hp + healAmount, 0, maxHP);
         UIManager.Instance?.UpdateHP(hp, maxHP);
     }
+    //SP消費処理
+    public void UseSpecial(int useSP){
+        sp = Mathf.Clamp(sp - useSP, 0, maxSP);
+        UIManager.Instance?.UpdateSP(sp, maxSP);
+    }
+    //SP回復処理
+    public void HealSP(int healSpAmount){
+        sp = Mathf.Clamp(sp + healSpAmount, 0, maxSP);
+        UIManager.Instance?.UpdateSP(sp, maxSP);
+    }
 
     public int GetHP(){
         return hp;
     }
+    public int GetSP(){
+        return sp;
+    }
+
     //攻撃の終了
     public void EndAttack(){
         isAttack = false;
