@@ -28,11 +28,13 @@ public class PlayerController : MonoBehaviour {
     private bool facingRight = true;
     [Header("攻撃アクション反転など")]
     [SerializeField] private SwordFlipHandler swordHandler;
-    [SerializeField] private WeaponManager weaponManager;
-
+    [SerializeField] private WeaponBase weaponBase;
+    [Header("スペシャル技")]
     [SerializeField] private GameObject playerBulletPrefab;
     [SerializeField] private Transform firePoint;
     [SerializeField] private int specialCost = 1;
+    [Header("ヒットしたエフェクト")]
+    [SerializeField] private HitEffectSpawner hitEffectSpawner;
 
     private Rigidbody2D rb;
     private Vector2 moveInput;
@@ -66,6 +68,12 @@ public class PlayerController : MonoBehaviour {
         if (groundCheck != null){
             groundCheck.OnGroundedChanged += OnGroundedChanged;
         }
+        
+        // 初期状態でAnimatorにfacingRightを設定（nullチェック追加）
+        if (anim != null){
+            anim.SetBool("FacingRight", facingRight);
+        }
+        Debug.Log($"Start - 初期facingRight: {facingRight}");
     }
     private void OnDestroy(){
         if (groundCheck != null){
@@ -74,15 +82,20 @@ public class PlayerController : MonoBehaviour {
     }
 
     void Update(){
-        // アニメーション更新
-        anim.SetBool("Walk", Mathf.Abs(moveInput.x) > 0.1f);
-        anim.SetBool("Jump", !isGrounded);
-        
-        // 空中攻撃中の状態管理
-        if (isAirAttacking && isAttacking) {
-            // 空中攻撃中はJumpステートを無効化
-            anim.SetBool("Jump", false);
+        // アニメーション更新（nullチェック追加）
+        if (anim != null){
+            anim.SetBool("Walk", Mathf.Abs(moveInput.x) > 0.1f);
+            anim.SetBool("Jump", !isGrounded);
+            
+            // 空中攻撃中の状態管理
+            if (isAirAttacking && isAttacking) {
+                // 空中攻撃中はJumpステートを無効化
+                anim.SetBool("Jump", false);
+            }
         }
+        
+        // 🔥 定期的な強制同期チェック（毎フレーム）
+        ForceSyncFacingDirection();
     }
 
     private void FixedUpdate(){
@@ -98,13 +111,7 @@ public class PlayerController : MonoBehaviour {
         // 物理演算による意図しないジャンプを防止
         PreventUnintendedJump();
 
-        // ジャンプ開始
-        if (jumpPressed && isGrounded && !isAttacking){
-            Debug.Log($"ジャンプ実行: isGrounded={isGrounded}, jumpPressed={jumpPressed}, isAttacking={isAttacking}");
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            jumpPressed = false;
-            jumpCutApplied = false;
-        }
+        // ジャンプ処理はOnJumpメソッドで即座に実行するため、ここでは削除
 
         // 可変ジャンプ
         if (!jumpHeld && !jumpCutApplied && rb.linearVelocity.y > 0){
@@ -189,30 +196,87 @@ public class PlayerController : MonoBehaviour {
         rb.AddForce(slopeDir.normalized * moveSpeed * 8f, ForceMode2D.Force);
     }
     private void LookMoveDirection(){
-        if(moveInput.x > 0.0f){
+        // 右向きの判定（より厳密に）
+        if(moveInput.x > 0.1f){
             facingRight = true;
             if (sr != null) sr.flipX = false;
-        }else if(moveInput.x < 0.0f){
+            Debug.Log("右向きに変更");
+        }
+        // 左向きの判定（より厳密に）
+        else if(moveInput.x < -0.1f){
             facingRight = false;
             if (sr != null) sr.flipX = true;
+            Debug.Log("左向きに変更");
+        }
+        // moveInput.xが-0.1f～0.1fの範囲の場合、facingRightは前の状態を維持
+        
+        // 🔥 強制的な同期チェック（スプライトの反転状態とfacingRightを強制同期）
+        if (sr != null){
+            // スプライトが反転していない（右向き）なのにfacingRightがfalseの場合
+            if (!sr.flipX && !facingRight){
+                facingRight = true;
+                Debug.Log("強制修正: 右向きなのにfacingRightがfalseだったためtrueに修正");
+            }
+            // スプライトが反転している（左向き）なのにfacingRightがtrueの場合
+            else if (sr.flipX && facingRight){
+                facingRight = false;
+                Debug.Log("強制修正: 左向きなのにfacingRightがtrueだったためfalseに修正");
+            }
         }
         // 剣の向きと武器の左右反転を同期
         swordHandler?.UpdateSwordDirection(facingRight);
-        weaponManager.Flip(facingRight);
+        
+        // weaponBaseのnullチェックを追加
+        if (weaponBase != null){
+            // SwordWeaponの向きも更新
+            var swordWeapon = weaponBase.GetComponent<SwordWeapon>();
+            if (swordWeapon != null){
+                swordWeapon.SetFacingRight(facingRight);
+            }
+        }
+        else{
+            Debug.LogWarning("weaponBaseがnullです。InspectorでWeaponBaseを設定してください。");
+        }
 
-        // 🔥 Animatorに状態を同期
-        anim.SetBool("FacingRight", facingRight);
+        // 🔥 Animatorに状態を同期（nullチェック追加）
+        if (anim != null){
+            anim.SetBool("FacingRight", facingRight);
+        }
+        
+        // デバッグログを追加（より詳細）
+        Debug.Log($"LookMoveDirection - moveInput: {moveInput}, moveInput.x: {moveInput.x}, facingRight: {facingRight}, sr.flipX: {sr?.flipX}");
+    }
+    
+    // 🔥 強制同期メソッド
+    private void ForceSyncFacingDirection(){
+        if (sr == null || anim == null) return;
+        
+        // スプライトが反転していない（右向き）なのにfacingRightがfalseの場合
+        if (!sr.flipX && !facingRight){
+            facingRight = true;
+            anim.SetBool("FacingRight", true);
+            Debug.Log("Update強制修正: 右向きなのにfacingRightがfalseだったためtrueに修正");
+        }
+        // スプライトが反転している（左向き）なのにfacingRightがtrueの場合
+        else if (sr.flipX && facingRight){
+            facingRight = false;
+            anim.SetBool("FacingRight", false);
+            Debug.Log("Update強制修正: 左向きなのにfacingRightがtrueだったためfalseに修正");
+        }
     }
     private void OnGroundedChanged(bool grounded){
         Debug.Log($"接地状態変化: {grounded}");
         isGrounded = grounded;
-        anim.SetBool("IsGrounded", grounded);
+        if (anim != null){
+            anim.SetBool("IsGrounded", grounded);
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D other){
         //敵の場合
         if(other.gameObject.tag == "Enemy"){
             HitEnemy(other.gameObject);
+            hitEffectSpawner.SpawnHitEffect(other.transform.position);
             gameObject.layer = LayerMask.NameToLayer("PlayerDamage");
             Debug.Log($"Check001 - Damage!!");
         }
@@ -220,7 +284,7 @@ public class PlayerController : MonoBehaviour {
     private void HitEnemy(GameObject enemy){
         float halfscaleY = transform.lossyScale.y / 2.0f;
         float enemyHalfScaleY = enemy.transform.lossyScale.y / 2.0f;
-        if(transform.position.y - (halfscaleY - 0.1f) >= enemy.transform.position.y + (enemyHalfScaleY - 0.1f)){
+        if (transform.position.y - (halfscaleY - 0.1f) >= enemy.transform.position.y + (enemyHalfScaleY - 0.1f)){
             Destroy(enemy);
             rb.AddForce(Vector2.up * jumpForce * 0.5f, ForceMode2D.Impulse);
         }else{
@@ -262,6 +326,9 @@ public class PlayerController : MonoBehaviour {
     // Invoke Unity Events 用
     public void OnMove(InputAction.CallbackContext context){
         moveInput = context.ReadValue<Vector2>();
+        
+        // 移動入力が変更された時に向きを更新
+        LookMoveDirection();
 
         // ↓キー押下中の処理チェック
         if (moveInput.y < -0.5f && !isDropping && groundCheck.IsGrounded){
@@ -276,6 +343,13 @@ public class PlayerController : MonoBehaviour {
         if (context.started){
             jumpPressed = true;
             jumpHeld = true;
+            // 即座にジャンプ処理を実行
+            if (isGrounded && !isAttacking){
+                Debug.Log($"ジャンプ実行: isGrounded={isGrounded}, jumpPressed={jumpPressed}, isAttacking={isAttacking}");
+                rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+                jumpPressed = false;
+                jumpCutApplied = false;
+            }
         }
         else if (context.canceled){
             jumpHeld = false;
@@ -286,7 +360,18 @@ public class PlayerController : MonoBehaviour {
             isAttacking = true;
             isAirAttacking = !isGrounded;
             StartCoroutine(AttackRoutine());
-            weaponManager.Attack(moveInput);
+            
+            // weaponBaseのnullチェックを追加
+            if (weaponBase != null){
+                Debug.Log($"PlayerController.OnAttack - weaponBase.StartAttack呼び出し: {moveInput}");
+                weaponBase.StartAttack(moveInput);
+            }
+            else{
+                Debug.LogError("weaponBaseがnullです。攻撃処理をスキップします。");
+            }
+            
+            // 攻撃時のfacingRightを確認
+            Debug.Log($"OnAttack - facingRight: {facingRight}, moveInput: {moveInput}");
         }
     }
     public void OnSpecialA(InputAction.CallbackContext context){
@@ -305,7 +390,9 @@ public class PlayerController : MonoBehaviour {
     }
 
     private IEnumerator AttackRoutine(){
-        anim.SetTrigger("Attack");
+        if (anim != null){
+            anim.SetTrigger("Attack");
+        }
         yield return new WaitForSeconds(0.05f); // トリガー維持を短く
         
         // 攻撃アニメ再生中はジャンプ抑制
@@ -314,7 +401,9 @@ public class PlayerController : MonoBehaviour {
         yield return new WaitForSeconds(attackDuration);
         
         // 攻撃終了時にトリガーをリセット
-        anim.ResetTrigger("Attack");
+        if (anim != null){
+            anim.ResetTrigger("Attack");
+        }
         isAttacking = false;
         isAirAttacking = false;
     }

@@ -823,9 +823,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1509482664476697413, guid: 8fb31abd443f094459400f12e6ab21fc, type: 3}
+      propertyPath: hitAnimationPrefab
+      value: 
+      objectReference: {fileID: 2492247588406474625, guid: efda86670dc94e747a1371da620c0ec7, type: 3}
+    - target: {fileID: 7919670496582792910, guid: 8fb31abd443f094459400f12e6ab21fc, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8418731901948988810, guid: 8fb31abd443f094459400f12e6ab21fc, type: 3}
       propertyPath: specialCost
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8497053089012765622, guid: 8fb31abd443f094459400f12e6ab21fc, type: 3}
+      propertyPath: weaponManager
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 9125102980391096417, guid: 8fb31abd443f094459400f12e6ab21fc, type: 3}
       propertyPath: m_Name
