@@ -1,6 +1,8 @@
 ﻿/* =======================================
  * スクリプト名：WeaponBase.cs
  * 武器の基底クラス
+ * Update : 2025/10/23
+ * Version : ver0.02
  * =======================================
  */
 using UnityEngine;
@@ -85,12 +87,10 @@ public abstract class WeaponBase : MonoBehaviour{
                 enemy.TakeDamage(damage);
                 Debug.Log($"{name} → {enemy.name} に {damage} ダメージ!");
                 AnimeEffect();
-            }
-            else{
+            }else{
                 Debug.LogWarning($"Enemyタグのオブジェクト {other.name} にBaseEnemyコンポーネントがありません");
             }
-        }
-        else{
+        }else{
             Debug.Log($"Enemyタグではないオブジェクト: {other.name} (tag: {other.tag})");
         }
     }
