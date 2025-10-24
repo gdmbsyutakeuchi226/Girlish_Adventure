@@ -53,11 +53,16 @@ public class PlayerController : MonoBehaviour {
 
     private bool isDropping = false;
     private PlatformEffector2D currentEffector; // 足元の床Effector参照
-
+    //アニメーションbool値
     private bool isGrounded;
     private bool isAttack;
     private bool isAttacking;
     private bool isAirAttacking;
+    //そのほかのフィールド変数
+    private bool isInvincible = false; // 無敵状態
+    public delegate void OnDamageDelegate();
+    public event OnDamageDelegate OnDamage;
+    private bool isDead = false;
 
     void Start(){
         rb = GetComponent<Rigidbody2D>();
@@ -273,10 +278,10 @@ public class PlayerController : MonoBehaviour {
     }
 
     private void OnCollisionEnter2D(Collision2D other){
-        //敵の場合
-        if(other.gameObject.tag == "Enemy"){
+        if (isInvincible) return; // ← 無敵中はヒット判定を無効化
+        if (other.gameObject.CompareTag("Enemy")){
             HitEnemy(other.gameObject);
-            hitEffectSpawner.SpawnHitEffect(other.transform.position); 
+            hitEffectSpawner.SpawnHitEffect(other.transform.position);
         }
     }
     private void HitEnemy(GameObject enemy){
@@ -287,42 +292,58 @@ public class PlayerController : MonoBehaviour {
             rb.AddForce(Vector2.up * jumpForce * 0.5f, ForceMode2D.Impulse);
             gameObject.layer = LayerMask.NameToLayer("Player");
         }else{
-            Debug.Log($"Check001 - Damage!!");
-            gameObject.layer = LayerMask.NameToLayer("PlayerDamage");
-            enemy.GetComponent<BaseEnemy>().Attack(this);
-            StartCoroutine(Damage());
+            if (!isInvincible){
+                gameObject.layer = LayerMask.NameToLayer("PlayerDamage");
+                enemy.GetComponent<BaseEnemy>().Attack(this);
+                StartCoroutine(Damage());
+            }
         }
     }
     //無敵時間
-    IEnumerator Damage(){
-        Debug.Log($"Check002 - Damage! 現在のgameObject.layer -> {gameObject.layer}");
-        Color color = sr.color;
-        for(int i = 0; i < damageTime; i++){
-            yield return new WaitForSeconds(flashTime);
-            sr.color = new Color(color.r, color.g, color.b, 0.0f);
+    private IEnumerator Damage(){
+        if (isInvincible) yield break;
+        isInvincible = true;
 
+        // 敵と衝突しないレイヤーに変更
+        gameObject.layer = LayerMask.NameToLayer("PlayerDamage");
+        Color color = sr.color;
+        float elapsed = 0f;
+        
+        while (elapsed < damageTime){
+            sr.color = new Color(color.r, color.g, color.b, 0.1f);
             yield return new WaitForSeconds(flashTime);
             sr.color = new Color(color.r, color.g, color.b, 1.0f);
+            yield return new WaitForSeconds(flashTime);
+            elapsed += flashTime * 2f;
         }
+        
+        // 無敵終了
         sr.color = color;
         gameObject.layer = LayerMask.NameToLayer("Player");
-        Debug.Log($"Check003 - 無敵時間終了 現在のgameObject.layer -> {gameObject.layer}");
+        isInvincible = false;
     }
+    //プレイヤーが特定のエリアに侵入した際の処理
+    private void OnTriggerEnter2D(Collider2D other){
+        if (other.CompareTag("FallZone")){
+            Debug.Log("落下検知");
+            StartCoroutine(HandleFallDeath());
+        }
+    }
+    private IEnumerator HandleFallDeath(){
+        // 例えばフェードアウトなど
+        yield return new WaitForSeconds(1f);
+        Destroy(gameObject);
+        // GameManager.Instance.RestartStage(); など
+    }
+
     //HPが0になった時の処理、Failureにする
     private void Dead(){
-        if(hp <= 0){
-            this.gameObject.SetActive(false); //Destroyでも良かったのですが安全性としてオブジェクトを残す
-            //Failure処理へ
-        }
-    }
-    //下に落下したらFailureにする
-    private void OnBecameInvisible(){
-        Camera camera = Camera.main;
-        Debug.Log($"camera.name => {camera.name}");
-        if(camera.name == "Main Camera" && camera.transform.position.y > transform.position.y){
-            Destroy(gameObject);
-            //Failure処理へ
-        }
+        if (isDead) return;
+        if (hp > 0) return;
+
+        isDead = true;
+        Debug.Log("Player Dead");
+        this.gameObject.SetActive(false);
     }
     // Invoke Unity Events 用
     public void OnMove(InputAction.CallbackContext context){
@@ -366,8 +387,7 @@ public class PlayerController : MonoBehaviour {
             if (weaponBase != null){
                 Debug.Log($"PlayerController.OnAttack - weaponBase.StartAttack呼び出し: {moveInput}");
                 weaponBase.StartAttack(moveInput);
-            }
-            else{
+            }else{
                 Debug.LogError("weaponBaseがnullです。攻撃処理をスキップします。");
             }
             
@@ -410,8 +430,10 @@ public class PlayerController : MonoBehaviour {
     }
     //ダメージ処理
     public void TakeDamage(int damage){
+        if (isInvincible) return;
         hp = Mathf.Clamp(hp - damage, 0, maxHP);
         UIManager.Instance?.UpdateHP(hp, maxHP);
+        OnDamage?.Invoke(); // CameraManagerへ通知
     }
     //回復処理
     public void HealHP(int healAmount){

@@ -115,22 +115,15 @@ public abstract class WeaponBase : MonoBehaviour{
         float xOffset = 0.5f;
 
         // facingRightは PlayerController などから伝達済み前提
-        if (TryGetComponent(out SpriteRenderer sr))
-        {
+        if (TryGetComponent(out SpriteRenderer sr)){
             // スプライトの反転状態を利用（右向きなら+、左向きなら-）
             float sign = sr.flipX ? -1f : 1f;
             spawnPos += new Vector3(xOffset * sign, 0f, 0f);
-        }
-        else
-        {
+        }else{
             // fallback: transformの向きで判定
             float sign = transform.lossyScale.x >= 0 ? 1f : -1f;
             spawnPos += new Vector3(xOffset * sign, 0f, 0f);
         }
-
-
-
-
         if (attackEffectPrefab != null){
             // パーティクル生成
             var effect = Instantiate(attackEffectPrefab, spawnPos, Quaternion.identity);

@@ -171,4 +171,6 @@ MonoBehaviour:
   damage: 4
   lifeTime: 5
   targetTag: Enemy
+  hitAnimationPrefab: {fileID: 2492247588406474625, guid: efda86670dc94e747a1371da620c0ec7, type: 3}
+  spawnPos: {x: 0, y: 0, z: 0}
   speed: 10
