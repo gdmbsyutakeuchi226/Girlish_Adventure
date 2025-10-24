@@ -247,7 +247,7 @@ public class PlayerController : MonoBehaviour {
         Debug.Log($"LookMoveDirection - moveInput: {moveInput}, moveInput.x: {moveInput.x}, facingRight: {facingRight}, sr.flipX: {sr?.flipX}");
     }
     
-    // 🔥 強制同期メソッド
+    // 🔥 強制同期メソッド・誤って逆向き化を防ぐ
     private void ForceSyncFacingDirection(){
         if (sr == null || anim == null) return;
         
@@ -276,9 +276,7 @@ public class PlayerController : MonoBehaviour {
         //敵の場合
         if(other.gameObject.tag == "Enemy"){
             HitEnemy(other.gameObject);
-            hitEffectSpawner.SpawnHitEffect(other.transform.position);
-            gameObject.layer = LayerMask.NameToLayer("PlayerDamage");
-            Debug.Log($"Check001 - Damage!!");
+            hitEffectSpawner.SpawnHitEffect(other.transform.position); 
         }
     }
     private void HitEnemy(GameObject enemy){
@@ -287,7 +285,10 @@ public class PlayerController : MonoBehaviour {
         if (transform.position.y - (halfscaleY - 0.1f) >= enemy.transform.position.y + (enemyHalfScaleY - 0.1f)){
             Destroy(enemy);
             rb.AddForce(Vector2.up * jumpForce * 0.5f, ForceMode2D.Impulse);
+            gameObject.layer = LayerMask.NameToLayer("Player");
         }else{
+            Debug.Log($"Check001 - Damage!!");
+            gameObject.layer = LayerMask.NameToLayer("PlayerDamage");
             enemy.GetComponent<BaseEnemy>().Attack(this);
             StartCoroutine(Damage());
         }
@@ -304,7 +305,7 @@ public class PlayerController : MonoBehaviour {
             sr.color = new Color(color.r, color.g, color.b, 1.0f);
         }
         sr.color = color;
-        gameObject.layer = LayerMask.NameToLayer("Default");
+        gameObject.layer = LayerMask.NameToLayer("Player");
         Debug.Log($"Check003 - 無敵時間終了 現在のgameObject.layer -> {gameObject.layer}");
     }
     //HPが0になった時の処理、Failureにする
