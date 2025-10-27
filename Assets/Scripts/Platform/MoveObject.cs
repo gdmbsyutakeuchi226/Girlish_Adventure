@@ -21,54 +21,43 @@ public class MoveObject : MonoBehaviour{
     }
 
     private void FixedUpdate(){
-        if (movePoint != null && movePoint.Length > 1 && rb != null){
-            //通常進行
+        if (movePoint == null || movePoint.Length <= 1) return;
+
+        Vector2 targetPos = returnPoint
+            ? movePoint[nowPoint - 1].transform.position
+            : movePoint[nowPoint + 1].transform.position;
+
+        transform.position = Vector2.MoveTowards(transform.position, targetPos, speed * Time.deltaTime);
+
+        // 到達判定
+        if (Vector2.Distance(transform.position, targetPos) <= 0.05f){
             if (!returnPoint){
-                int nextPoint = nowPoint + 1;
-
-                //目標ポイントとの誤差がわずかになるまで移動
-                if (Vector2.Distance(transform.position, movePoint[nextPoint].transform.position) > 0.1f){
-                    //現在地から次のポイントへのベクトルを作成
-                    Vector2 toVector = Vector2.MoveTowards(transform.position, movePoint[nextPoint].transform.position, speed * Time.deltaTime);
-
-                    //次のポイントへ移動
-                    rb.MovePosition(toVector);
-                }
-                //次のポイントを１つ進める
-                else{
-                    rb.MovePosition(movePoint[nextPoint].transform.position);
-                    ++nowPoint;
-                    //現在地が配列の最後だった場合
-                    if (nowPoint + 1 >= movePoint.Length)
-                    {
-                        returnPoint = true;
-                    }
-                }
+                nowPoint++;
+                if (nowPoint + 1 >= movePoint.Length)
+                    returnPoint = true;
+            }else{
+                nowPoint--;
+                if (nowPoint <= 0)
+                    returnPoint = false;
             }
-            //折返し進行
-            else{
-                int nextPoint = nowPoint - 1;
+        }
 
-                //目標ポイントとの誤差がわずかになるまで移動
-                if (Vector2.Distance(transform.position, movePoint[nextPoint].transform.position) > 0.1f){
-                    //現在地から次のポイントへのベクトルを作成
-                    Vector2 toVector = Vector2.MoveTowards(transform.position, movePoint[nextPoint].transform.position, speed * Time.deltaTime);
+        // 速度計算（オプション）
+        Vector2 newPos = transform.position;
+        myVelocity = (newPos - oldPos) / Time.deltaTime;
+        oldPos = newPos;
+    }
+    private void OnCollisionEnter2D(Collision2D collision){
+        if (collision.gameObject.CompareTag("Player")){
+            collision.transform.SetParent(transform);
+            Debug.Log($"Check 201 - [MoveObject] Player entered lift: {name}");
+        }
+    }
 
-                    //次のポイントへ移動
-                    rb.MovePosition(toVector);
-                }
-                //次のポイントを１つ戻す
-                else{
-                    rb.MovePosition(movePoint[nextPoint].transform.position);
-                    --nowPoint;
-                    //現在地が配列の最初だった場合
-                    if (nowPoint <= 0){
-                        returnPoint = false;
-                    }
-                }
-            }
-            myVelocity = (rb.position - oldPos) / Time.deltaTime;
-            oldPos = rb.position;
+    private void OnCollisionExit2D(Collision2D collision){
+        if (collision.gameObject.CompareTag("Player")){
+            collision.transform.SetParent(null);
+            Debug.Log($"Check 202 - [MoveObject] Player exited lift: {name}");
         }
     }
 }
