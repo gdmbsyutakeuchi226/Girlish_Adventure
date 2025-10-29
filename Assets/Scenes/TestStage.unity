@@ -1072,7 +1072,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e59d48b4ac4837348b1a162480fb1817, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  uiPrefab: {fileID: 4502572998173713903, guid: 9a2a0feb5dfbac74b8f585d82da78d86, type: 3}
+  soundManager: {fileID: 0}
 --- !u!1001 &855510090
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2078,6 +2078,7 @@ GameObject:
   - component: {fileID: 1821354084}
   - component: {fileID: 1821354087}
   - component: {fileID: 1821354086}
+  - component: {fileID: 1821354088}
   m_Layer: 0
   m_Name: GoalFlag
   m_TagString: Untagged
@@ -2205,6 +2206,18 @@ BoxCollider2D:
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
 --- !u!114 &1821354087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1821354083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11d135f4a63e45a4b8c78c322cde5d4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GoalFlag
+--- !u!114 &1821354088
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -14,7 +14,8 @@ public class GameManager : MonoBehaviour {
     public int CurrentStage { get; private set; }
 
     [SerializeField] private SoundManager soundManager; // Inspector‚ÅPersistentã‚ÌSoundManagerŽQÆ
-
+    public SoundManager Sound => soundManager;
+    public UIManager UI => uiManager;
     private void Awake(){
         if (Instance != null){
             Destroy(gameObject);

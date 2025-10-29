@@ -8,24 +8,27 @@ using UnityEngine;
 
 public class StageInitializer : MonoBehaviour {
     [SerializeField] private GameObject uiManagerPrefab;
-    [SerializeField] private int bgmID = -1; // ステージ固有BGM（任意指定）
+    [SerializeField] private GameObject fadeCanvasPrefab;
+    [SerializeField] private int bgmID = -1;
 
-    private GameObject uiInstance;
+    private GameObject fadeCanvasInstance;
 
     private void Start(){
         // UI生成
         if (uiManagerPrefab != null){
-            uiInstance = Instantiate(uiManagerPrefab);
-            var uiManager = uiInstance.GetComponent<UIManager>();
-            if (uiManager != null)
-                GameManager.Instance.RegisterUI(uiManager);
+            var uiInstance = Instantiate(uiManagerPrefab);
+            GameManager.Instance.RegisterUI(uiInstance.GetComponent<UIManager>());
+        }
+
+        // フェードCanvas生成
+        if (fadeCanvasPrefab != null){
+            fadeCanvasInstance = Instantiate(fadeCanvasPrefab);
+            DontDestroyOnLoad(fadeCanvasInstance); // WorldMap遷移後も残してFadeIn可能
         }
 
         // BGM再生
-        if (bgmID >= 0)
-            GameManager.Instance.PlayBGM(bgmID);
-        else
-            GameManager.Instance.PlayBGM(GameManager.Instance.CurrentStage);
+        int id = bgmID >= 0 ? bgmID : GameManager.Instance.CurrentStage;
+        GameManager.Instance.PlayBGM(id);
     }
 
     private void OnDestroy(){
