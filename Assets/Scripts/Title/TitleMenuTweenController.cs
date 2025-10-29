@@ -6,6 +6,8 @@
  * Version : 0.01
  * 更新内容 : 
  * 備考：DoTween必須
+ * TitleMenuTweenController = 遷移司令塔
+ * GameStartPanelController / OptionPanelController = 部隊リーダー（各UI制御）
  * ======================================= */
 using UnityEngine;
 using DG.Tweening;
@@ -14,7 +16,6 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 public class TitleMenuTweenController : MonoBehaviour{
-
     [Header("Panels")]
     [SerializeField] private RectTransform menuPanel;
     [SerializeField] private RectTransform gameStartPanel;
@@ -28,6 +29,7 @@ public class TitleMenuTweenController : MonoBehaviour{
     [Header("Animation Settings")]
     [SerializeField] private float duration = 0.6f;
     [SerializeField] private float slideDistance = 800f;
+    [SerializeField] private bool forceHideAtStart = true; // 外部からの上書きを抑止
 
     [Header("Buttons")]
     [SerializeField] private Button firstMenuButton;
@@ -35,7 +37,7 @@ public class TitleMenuTweenController : MonoBehaviour{
     [SerializeField] private Button firstGameButton;
     [SerializeField] private Button menuGameStartButton; // メニュー上の「GameStart」ボタン
     [SerializeField] private Button menuOptionButton;    // メニュー上の「Option」ボタン
-    [SerializeField] private Button backButton; // 戻るボタン
+    [SerializeField] private Button newGameButton;       // 「NewGame」ボタン（フェード→シーン切替）
 
     [Header("Cursor")]
     [SerializeField] private TitleCursorController cursorController;
@@ -43,22 +45,20 @@ public class TitleMenuTweenController : MonoBehaviour{
     [Header("ScreenFade")]
     [SerializeField] private ScreenFadeController fadeController;
     [SerializeField] private string nextSceneName = "MainScene"; // 次のシーン名（仮）
-    [SerializeField] private Button newGameButton;
-
 
     private RectTransform currentPanel;
     private CanvasGroup currentGroup;
+    private bool menuOpenedOnce = false;
 
-    private void Start(){
-        // タイトル起動直後はメニューを表示しない（AnyKey後に表示）
-        InitPanel(menuPanel, menuGroup, new Vector2(slideDistance, 0), 0f);
-        InitPanel(gameStartPanel, gameStartGroup, new Vector2(slideDistance, 0), 0f);
-        InitPanel(optionPanel, optionGroup, new Vector2(slideDistance, 0), 0f);
+    private void Awake(){
+        // 起動時は全パネル非表示
+        HidePanelHard(menuPanel, menuGroup);
+        HidePanelHard(gameStartPanel, gameStartGroup);
+        HidePanelHard(optionPanel, optionGroup);
+    }
 
-        currentPanel = null;
-        currentGroup = null;
-
-        // クリック配線をコードで担保
+    private void OnEnable(){
+        // ボタン登録
         if (menuGameStartButton != null){
             menuGameStartButton.onClick.RemoveListener(SwitchToGameStart);
             menuGameStartButton.onClick.AddListener(SwitchToGameStart);
@@ -71,18 +71,21 @@ public class TitleMenuTweenController : MonoBehaviour{
             newGameButton.onClick.RemoveAllListeners();
             newGameButton.onClick.AddListener(OnNewGame);
         }
-        // 既存設定の後に追加
-        if (backButton != null){
-            backButton.onClick.RemoveAllListeners();
-            backButton.onClick.AddListener(SwitchToMenu);
+    }
+
+    private void Update(){
+        // 保険：外部操作で誤って開かれたパネルを閉じる
+        if (!menuOpenedOnce && forceHideAtStart){
+            if (gameStartPanel.gameObject.activeSelf || gameStartGroup.alpha > 0f)
+                HidePanelHard(gameStartPanel, gameStartGroup);
+            if (optionPanel.gameObject.activeSelf || optionGroup.alpha > 0f)
+                HidePanelHard(optionPanel, optionGroup);
         }
     }
 
-    private void InitPanel(RectTransform panel, CanvasGroup group, Vector2 pos, float alpha){
-        panel.anchoredPosition = pos;
-        group.alpha = alpha;
-        panel.gameObject.SetActive(alpha > 0);
-    }
+    //============================
+    // パネル切替処理
+    //============================
 
     public void SwitchToGameStart(){
         SwitchPanel(gameStartPanel, gameStartGroup, firstGameButton);
@@ -93,14 +96,21 @@ public class TitleMenuTweenController : MonoBehaviour{
     }
 
     public void SwitchToMenu(){
+        Debug.Log("[TitleMenu] SwitchToMenu called");
+        if (currentGroup != null){
+            currentGroup.interactable = false;
+            currentGroup.blocksRaycasts = false;
+        }
+
         SwitchPanel(menuPanel, menuGroup, firstMenuButton);
     }
 
     private void SwitchPanel(RectTransform nextPanel, CanvasGroup nextGroup, Button firstSelect){
         if (nextPanel == currentPanel) return;
 
-        // 退場アニメ
         Sequence seq = DOTween.Sequence();
+
+        // 退場アニメ
         if (currentPanel != null){
             currentGroup.interactable = false;
             currentGroup.blocksRaycasts = false;
@@ -117,26 +127,29 @@ public class TitleMenuTweenController : MonoBehaviour{
 
         seq.Append(nextPanel.DOAnchorPos(Vector2.zero, duration).SetEase(Ease.OutCubic));
         seq.Join(nextGroup.DOFade(1f, duration));
-        seq.OnComplete(() =>
-        {
+        seq.OnComplete(() => {
             if (currentPanel != null)
                 currentPanel.gameObject.SetActive(false);
 
             currentPanel = nextPanel;
             currentGroup = nextGroup;
 
-            // 必ずここでCanvasGroupを有効化
             currentGroup.interactable = true;
             currentGroup.blocksRaycasts = true;
 
-            // EventSystemへ最初のボタンを設定（null防止）
-            EventSystem.current.SetSelectedGameObject(firstSelect.gameObject);
+            var targetFirst = ResolveFirstButton(nextPanel, firstSelect);
+            if (targetFirst != null)
+                EventSystem.current.SetSelectedGameObject(targetFirst.gameObject);
 
-            // カーソルにアクティブグループを通知
             if (cursorController != null)
                 cursorController.SetActiveGroup(currentGroup);
         });
     }
+
+    //============================
+    // 初回メニュー表示
+    //============================
+
     public void OpenMenuFirstTime(){
         menuPanel.gameObject.SetActive(true);
         menuPanel.anchoredPosition = Vector2.zero;
@@ -146,12 +159,44 @@ public class TitleMenuTweenController : MonoBehaviour{
 
         currentPanel = menuPanel;
         currentGroup = menuGroup;
+        menuOpenedOnce = true;
 
-        EventSystem.current.SetSelectedGameObject(firstMenuButton.gameObject);
+        var targetFirst = ResolveFirstButton(menuPanel, firstMenuButton);
+        if (targetFirst != null)
+            EventSystem.current.SetSelectedGameObject(targetFirst.gameObject);
 
         if (cursorController != null)
             cursorController.SetActiveGroup(menuGroup);
     }
+
+    //============================
+    // ヘルパー関数
+    //============================
+
+    private Button ResolveFirstButton(RectTransform root, Button assigned){
+        if (assigned != null && assigned.gameObject.activeInHierarchy && assigned.interactable)
+            return assigned;
+
+        var buttons = root.GetComponentsInChildren<Button>(true);
+        foreach (var b in buttons){
+            if (b.gameObject.activeInHierarchy && b.interactable)
+                return b;
+        }
+        return assigned;
+    }
+
+    private void HidePanelHard(RectTransform panel, CanvasGroup group){
+        panel.gameObject.SetActive(false);
+        panel.anchoredPosition = new Vector2(slideDistance, 0);
+        group.alpha = 0f;
+        group.interactable = false;
+        group.blocksRaycasts = false;
+    }
+
+    //============================
+    // New Game フェード→シーン切替
+    //============================
+
     private void OnNewGame(){
         if (fadeController == null){
             Debug.LogError("FadeController not assigned!");
@@ -160,7 +205,6 @@ public class TitleMenuTweenController : MonoBehaviour{
 
         fadeController.FadeOut().OnComplete(() => {
             Debug.Log("NewGame start fade complete!");
-            // シーン遷移（仮） - ここでロード処理へ
             SceneManager.LoadScene(nextSceneName);
         });
     }
