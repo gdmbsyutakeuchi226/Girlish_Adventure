@@ -392,7 +392,6 @@ public class PlayerController : MonoBehaviour{
     }
 
     // ===================== ステータス制御 =====================
-    // 現在コンパイルエラーCS0117とCS1061が多発したため停止
     public void TakeDamage(int dmg){
         if (isInvincible) return;
         hp = Mathf.Clamp(hp - dmg, 0, maxHP);

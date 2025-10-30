@@ -999,7 +999,7 @@ MonoBehaviour:
   movePoint:
   - {fileID: 1670381390}
   - {fileID: 709851071}
-  speed: 4
+  speed: 3
 --- !u!50 &859652811
 Rigidbody2D:
   serializedVersion: 5
