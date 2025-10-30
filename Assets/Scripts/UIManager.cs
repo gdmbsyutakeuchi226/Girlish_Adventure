@@ -41,11 +41,15 @@ public class UIManager : MonoBehaviour {
 
     private void OnLevelWasLoaded(int level) => AssignCamera();
 
-    private void AssignCamera(){
+    public void AssignCamera(){
         if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera){
-            var mainCam = Camera.main;
-            if (mainCam != null)
+            var mainCam = PersistentCameraController.Instance?.GetCamera();
+            if (mainCam != null){
                 canvas.worldCamera = mainCam;
+                Debug.Log($"[UIManager] Canvas に {mainCam.name} を再設定しました");
+            }else{
+                Debug.LogWarning("[UIManager] MainCameraが見つかりません。PersistentCameraControllerを確認してください。");
+            }
         }
     }
 
