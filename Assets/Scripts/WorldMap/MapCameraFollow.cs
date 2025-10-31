@@ -1,3 +1,11 @@
+/* =======================================
+ * ファイル名 : MapCameraFollow.cs
+ * 概要 : マップ画面カメラ追従スクリプト
+ * Created Date : 2025/10/30
+ * Date : 2025/10/30
+ * Version : 0.01
+ * 更新内容 : 新規作成
+ * ======================================= */
 using UnityEngine;
 
 public class MapCameraFollow : MonoBehaviour{

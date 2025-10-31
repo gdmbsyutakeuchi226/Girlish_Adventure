@@ -1,4 +1,12 @@
-﻿using UnityEngine;
+﻿/* =======================================
+ * ファイル名 : CoinManager.cs
+ * 概要 : コイン管理スクリプト
+ * Created Date : 2025/10/14
+ * Date : 2025/10/31
+ * Version : 0.02
+ * 更新内容 : UIManagerに対応
+ * ======================================= */
+using UnityEngine;
 
 public class CoinManager : MonoBehaviour{
     public static CoinManager Instance { get; private set; }
