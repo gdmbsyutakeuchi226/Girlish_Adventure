@@ -84,6 +84,24 @@ public class PlayerController : MonoBehaviour{
         playerInput = GetComponent<PlayerInput>();
     }
 
+    private void Start(){
+        // HP/SP を起動時に最大値で初期化
+        if (hp <= 0) hp = maxHP;
+        if (sp <= 0) sp = maxSP;
+
+        // UI がまだ未登録のことがあるため、登録を待ってから同期
+        StartCoroutine(InitialSyncUIRoutine());
+    }
+
+    private IEnumerator InitialSyncUIRoutine(){
+        // GameManager と UIManager の準備を待機
+        while (GameManager.Instance == null || GameManager.Instance.UI == null)
+            yield return null;
+
+        GameManager.Instance.UI.UpdateHP(hp, maxHP);
+        GameManager.Instance.UI.UpdateSP(sp, maxSP);
+    }
+
     private void OnEnable(){
         if (playerInput == null) playerInput = GetComponent<PlayerInput>();
         if (playerInput != null){
