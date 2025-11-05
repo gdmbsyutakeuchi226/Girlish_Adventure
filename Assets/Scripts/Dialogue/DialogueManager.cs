@@ -6,55 +6,83 @@
  * Version : 0.02
  * 更新内容 : タイプ音付きバージョン
  * ======================================= */
-using UnityEngine;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class DialogueManager : MonoBehaviour {
-    [SerializeField] private DialogueUI ui;
-    [SerializeField] private DialogueData dialogueData;
-    [SerializeField] private float typeSpeed = 0.03f; // 文字の出る速度
-    [SerializeField] private int typeSoundId = 5; // ← タイプ音のSE ID（任意番号）
+    [Header("UI参照")]
+    [SerializeField] private TextMeshProUGUI nameText;
+    [SerializeField] private TextMeshProUGUI dialogueText;
+    [SerializeField] private GameObject nextIcon;
 
-    private int currentPage = 0;
+    [Header("オプション")]
+    [SerializeField] private float typingSpeed = 0.03f;
+
+    private Queue<DialogueLine> dialogueLines = new Queue<DialogueLine>();
     private bool isTyping = false;
-    private bool waitingForNext = false;
-    private GameManager gameManager; // ← 追加
+    private GameManager gameManager;
 
-    private void Start(){
-        gameManager = GameManager.Instance; // 例：シングルトン想定
-        StartCoroutine(PlayDialogue());
+    private Action onDialogueEnd; // 会話終了後のイベント用
+
+    void Awake(){
+        gameManager = FindObjectOfType<GameManager>();
+        nextIcon.SetActive(false);
     }
 
-    private IEnumerator PlayDialogue(){
-        while (currentPage < dialogueData.pages.Length){
-            yield return StartCoroutine(TypePage(dialogueData.pages[currentPage]));
+    public void StartDialogue(DialogueData data, Action onEndEvent = null){
+        // 会話イベントを登録
+        onDialogueEnd = onEndEvent;
 
-            waitingForNext = true;
-            yield return new WaitUntil(() => Input.GetButtonDown("Submit") || Input.GetKeyDown(KeyCode.Space));
-            waitingForNext = false;
+        if (gameManager != null)
+            gameManager.SetGamePaused(true);
 
-            currentPage++;
+        dialogueLines.Clear();
+        foreach (var line in data.lines)
+            dialogueLines.Enqueue(line);
+
+        DisplayNextLine();
+    }
+
+    public void DisplayNextLine(){
+        if (isTyping) return;
+
+        if (dialogueLines.Count == 0){
+            EndDialogue();
+            return;
         }
 
-        ui.HideWindow();
+        DialogueLine line = dialogueLines.Dequeue();
+        nameText.text = line.characterName;
+        StartCoroutine(TypeLine(line.text));
     }
 
-    private IEnumerator TypePage(string text){
+    private IEnumerator TypeLine(string line){
         isTyping = true;
-        ui.ClearText();
+        dialogueText.text = "";
+        nextIcon.SetActive(false);
 
-        foreach (char c in text){
-            ui.AppendText(c.ToString());
-
-
-            // --- ここでタイプ音を再生 ---
-            if (c != ' ' && c != '\n'){
-                // 空白・改行は無音
-                gameManager.PlaySE(typeSoundId);
-            }
-            yield return new WaitForSeconds(typeSpeed);
+        foreach (char c in line.ToCharArray()){
+            dialogueText.text += c;
+            yield return new WaitForSecondsRealtime(typingSpeed);
         }
 
         isTyping = false;
+        nextIcon.SetActive(true);
+    }
+
+    private void EndDialogue(){
+        dialogueText.text = "";
+        nameText.text = "";
+        nextIcon.SetActive(false);
+
+        if (gameManager != null)
+            gameManager.SetGamePaused(false);
+
+        onDialogueEnd?.Invoke();
+        onDialogueEnd = null;
     }
 }

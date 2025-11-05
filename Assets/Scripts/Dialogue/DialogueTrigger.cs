@@ -1,28 +1,37 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class DialogueTrigger : MonoBehaviour {
     [SerializeField] private DialogueData dialogueData;
-    [SerializeField] private MonoBehaviour eventScript; // ‰ï˜bŒã‚ÉÀs‚µ‚½‚¢ƒXƒNƒŠƒvƒg
-    [SerializeField] private string eventMethodName = "OnDialogueEnd"; // Àsƒƒ\ƒbƒh–¼
+    [SerializeField] private MonoBehaviour eventScript; // ä¼šè©±å¾Œã«å®Ÿè¡Œã—ãŸã„ã‚¹ã‚¯ãƒªãƒ—ãƒˆ
+    [SerializeField] private string eventMethodName = "OnDialogueEnd"; // å®Ÿè¡Œãƒ¡ã‚½ãƒƒãƒ‰å
 
     private bool triggered = false;
 
-    private void OnTriggerEnter2D(Collider2D other){
-        if (triggered) return;
-        if (!other.CompareTag("Player")) return;
+    [SerializeField] private DialogueData dialogue;
+    [SerializeField] private MonoBehaviour onEndScript; // çµ‚äº†å¾Œã«å®Ÿè¡Œã—ãŸã„ã‚¹ã‚¯ãƒªãƒ—ãƒˆ
 
-        triggered = true;
-        var window = FindObjectOfType<DialogueWindow>();
-        if (window != null){
-            window.StartDialogue(dialogueData, OnDialogueFinished);
+    private DialogueManager dialogueManager;
+
+    void Start()
+    {
+        dialogueManager = FindObjectOfType<DialogueManager>();
+    }
+
+    public void TriggerDialogue()
+    {
+        if (dialogueManager != null)
+        {
+            dialogueManager.StartDialogue(dialogue, OnDialogueEnd);
         }
     }
 
-    private void OnDialogueFinished(){
-        if (eventScript != null){
-            var method = eventScript.GetType().GetMethod(eventMethodName);
+    private void OnDialogueEnd()
+    {
+        if (onEndScript != null)
+        {
+            var method = onEndScript.GetType().GetMethod("OnDialogueComplete");
             if (method != null)
-                method.Invoke(eventScript, null);
+                method.Invoke(onEndScript, null);
         }
     }
 }

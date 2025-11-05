@@ -9,23 +9,23 @@
  * ======================================= */
 using UnityEngine;
 
-[System.Serializable]
-public class DialogueLine {
-    public string speakerName;   // キャラ名
-    [TextArea(3, 5)]
-    public string text;          // セリフ
-}
-
-[CreateAssetMenu(menuName = "Event/DialogueData")]
+[CreateAssetMenu(menuName = "Dialogue/Data")]
 public class DialogueData : ScriptableObject {
     public DialogueLine[] lines;
 }
 
+[System.Serializable]
+public class DialogueLine {
+    public string characterName; // ←★ これを追加！
+    [TextArea(2, 5)] public string text;
+}
+
 /* ---------------------------------------
- * Canvas
- └ DialogueWindow (Imageなどで枠)
-     ├ Text (TextMeshProUGUI)
-     └ NextIcon (▼など、点滅アイコン) ※任意
+Canvas
+ └ DialogueWindow (Image) ← UI全体にこのスクリプト群をアタッチ(Dialogueと書かれたcsファイル)
+     ├ NameText (TextMeshProUGUI) ← キャラ名表示
+     ├ DialogueText (TextMeshProUGUI) ← セリフ表示
+     └ NextIcon (Image/TextMeshProUGUI) ← 点滅アイコン
  * ---------------------------------------
  * DialogueUI を DialogueWindow にアタッチ
  * Text に TextMeshProUGUI を設定

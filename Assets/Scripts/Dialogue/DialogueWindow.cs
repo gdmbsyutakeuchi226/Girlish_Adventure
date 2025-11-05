@@ -71,7 +71,7 @@ public class DialogueWindow : MonoBehaviour {
         }
 
         var line = currentData.lines[currentIndex];
-        nameText.text = line.speakerName;
+        nameText.text = line.characterName;
         StartCoroutine(TypeText(line.text));
     }
 
