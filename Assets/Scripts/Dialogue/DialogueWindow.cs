@@ -19,13 +19,11 @@ public class DialogueWindow : MonoBehaviour {
 
     private GameManager gameManager => GameManager.Instance;
 
-    private void Start()
-    {
+    private void Start(){
         windowRoot.SetActive(false);
     }
 
-    public void StartDialogue(DialogueData data, Action onEnd = null)
-    {
+    public void StartDialogue(DialogueData data, Action onEnd = null){
         if (data == null) return;
 
         // 会話開始時はゲームを一時停止
@@ -39,22 +37,17 @@ public class DialogueWindow : MonoBehaviour {
         ShowNextLine();
     }
 
-    private void Update()
-    {
+    private void Update(){
         if (!windowRoot.activeSelf) return;
 
-        if (Input.GetKeyDown(KeyCode.Z) || Input.GetButtonDown("Submit"))
-        {
-            if (isTyping)
-            {
+        if (Input.GetKeyDown(KeyCode.Z) || Input.GetButtonDown("Submit")){
+            if (isTyping){
                 // タイプ中ならスキップして全文表示
                 StopAllCoroutines();
                 dialogueText.text = currentData.lines[currentIndex].text;
                 isTyping = false;
                 isWaiting = true;
-            }
-            else if (isWaiting)
-            {
+            }else if (isWaiting){
                 // ページ送り
                 currentIndex++;
                 ShowNextLine();
@@ -62,10 +55,8 @@ public class DialogueWindow : MonoBehaviour {
         }
     }
 
-    private void ShowNextLine()
-    {
-        if (currentData == null || currentIndex >= currentData.lines.Length)
-        {
+    private void ShowNextLine(){
+        if (currentData == null || currentIndex >= currentData.lines.Length){
             EndDialogue();
             return;
         }
@@ -75,17 +66,14 @@ public class DialogueWindow : MonoBehaviour {
         StartCoroutine(TypeText(line.text));
     }
 
-    private IEnumerator TypeText(string text)
-    {
+    private IEnumerator TypeText(string text){
         isTyping = true;
         isWaiting = false;
         dialogueText.text = "";
 
-        foreach (char c in text)
-        {
+        foreach (char c in text){
             dialogueText.text += c;
-            if (c != ' ' && c != '\n')
-            {
+            if (c != ' ' && c != '\n'){
                 gameManager.PlaySE(3); // タイプ音ID例
             }
             yield return new WaitForSeconds(typeSpeed);
@@ -95,8 +83,7 @@ public class DialogueWindow : MonoBehaviour {
         isWaiting = true;
     }
 
-    private void EndDialogue()
-    {
+    private void EndDialogue(){
         windowRoot.SetActive(false);
         currentData = null;
         onDialogueEnd?.Invoke(); // イベントコール
