@@ -29,14 +29,3 @@ public class DialogueUI : MonoBehaviour {
         textMeshPro.text += value;
     }
 }
-/* ---------------------------------------
- * Canvas
- └ DialogueWindow (Imageなどで枠)
-     ├ Text (TextMeshProUGUI)
-     └ NextIcon (▼など、点滅アイコン) ※任意
- * ---------------------------------------
- * DialogueUI を DialogueWindow にアタッチ
- * Text に TextMeshProUGUI を設定
- * DialogueManager の ui に DialogueUI を指定
- * dialogueData に会話データSOを指定
-*/

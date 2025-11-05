@@ -1342,6 +1342,80 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e055e2aa78bfd24993db51e235445c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+--- !u!1 &1092287730
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1092287734}
+  - component: {fileID: 1092287733}
+  - component: {fileID: 1092287732}
+  - component: {fileID: 1092287731}
+  m_Layer: 0
+  m_Name: StageInit
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1092287731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092287730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bee4769607bc95c49850f825ca550732, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BootLoader
+--- !u!114 &1092287732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092287730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2b7232eb91f25343aece28ba9ba590c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneFader
+  fadeImage: {fileID: 0}
+  fadeDuration: 1
+--- !u!114 &1092287733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092287730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa4578cb8cb199743ba16fa41e0350e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StageInitializer
+  uiManagerPrefab: {fileID: 3344428280801254172, guid: a55967677285f294ba0be9cc0e30600b, type: 3}
+  bgmID: 1
+--- !u!4 &1092287734
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092287730}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1129633509
 GameObject:
   m_ObjectHideFlags: 0
@@ -1713,11 +1787,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!1 &1307022363 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6810102119040039463, guid: 64d1e561e363e3c448e092a78cbb54ca, type: 3}
-  m_PrefabInstance: {fileID: 759906587}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1313624944
 GameObject:
   m_ObjectHideFlags: 0
@@ -2349,7 +2418,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 233fe9046ef25dc4bb0951884a9076c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GoalTrigger
-  fadePrefab: {fileID: 1307022363}
+  goalFanfareID: 99
+  resultSceneName: Result
 --- !u!1 &1834497896
 GameObject:
   m_ObjectHideFlags: 0
@@ -4498,3 +4568,4 @@ SceneRoots:
   - {fileID: 759906587}
   - {fileID: 648842082}
   - {fileID: 2085336994}
+  - {fileID: 1092287734}

@@ -6,6 +6,7 @@
  * Version : 0.04
  * 更新内容 : Presistent対応
  * ======================================= */
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -16,17 +17,58 @@ public class GameManager : MonoBehaviour {
     public int CurrentStage { get; private set; }
 
     [SerializeField] private SoundManager soundManager; // InspectorでPersistent上のSoundManager参照
-    public SoundManager Sound => soundManager;
+    public SoundManager SoundManager { get; private set; }
     public UIManager UI => uiManager;
+
+    private bool persistentLoaded = false;
+
     private void Awake(){
-        if (Instance != null){
+        if (Instance == null){
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            StartCoroutine(EnsurePersistentLoaded());
+        }else{
             Destroy(gameObject);
-            return;
+        }
+    }
+
+    private IEnumerator EnsurePersistentLoaded(){
+        // PersistentがロードされていなければAdditiveロード
+        if (!SceneManager.GetSceneByName("Persistent").isLoaded){
+            Debug.Log("Persistentシーンが未ロードのため、強制ロードを実行します。");
+            var async = SceneManager.LoadSceneAsync("Persistent", LoadSceneMode.Additive);
+            while (!async.isDone) yield return null;
         }
 
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
+        // SoundManagerが現れるまで探す
+        float timeout = 5f;
+        while (soundManager == null && timeout > 0f){
+            soundManager = FindObjectOfType<SoundManager>();
+            if (soundManager != null){
+                Debug.Log($"✅ SoundManagerを検出しました -> {soundManager.name}");
+                yield break;
+            }
+            timeout -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (soundManager == null)
+            Debug.LogError("❌ SoundManagerが見つかりません。Persistentシーンに正しく配置されているか確認してください。");
     }
+
+    public void SetGamePaused(bool isPaused){
+        // タイムスケールを止めて物理・アニメを停止
+        Time.timeScale = isPaused ? 0f : 1f;
+
+        // プレイヤー操作を禁止したい場合
+        PlayerController player = FindObjectOfType<PlayerController>();
+        if (player != null)
+            player.enabled = !isPaused;
+
+        Debug.Log($"Game Paused: {isPaused}");
+    }
+
+    // ===== UI関連 =====
 
     public void RegisterUI(UIManager ui){
         uiManager = ui;
@@ -58,18 +100,28 @@ public class GameManager : MonoBehaviour {
 
     // ===== サウンド操作 =====
 
+
     public void PlayBGM(int bgmID){
-        if (soundManager != null)
+        if (soundManager == null){
+            soundManager = FindObjectOfType<SoundManager>();
+        }
+        if (soundManager != null){
             soundManager.PlayBGM(bgmID);
-        else
-            Debug.LogWarning("SoundManager が未設定です。Persistent シーンに配置してください。");
+        }else{
+            Debug.LogWarning("⚠️ SoundManager未設定。Persistentロードを再試行。");
+            StartCoroutine(EnsurePersistentLoaded());
+        }
+    }
+
+    public void PlaySE(int seID){
+        if (soundManager == null)
+            soundManager = FindObjectOfType<SoundManager>();
+        if (soundManager != null)
+            soundManager.PlaySE(seID);
     }
 
     public void StopBGM(){
         soundManager?.StopBGM();
     }
 
-    public void PlaySE(int seID){
-        soundManager?.PlaySE(seID);
-    }
 }
