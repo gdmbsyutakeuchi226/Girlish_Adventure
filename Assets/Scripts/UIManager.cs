@@ -8,14 +8,21 @@
  * ======================================= */
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
 using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour {
+    public static UIManager Instance { get; private set; }
     [Header("UI References")]
     [SerializeField] private Canvas canvas;
     [SerializeField] private TextMeshProUGUI coinText;
     [SerializeField] private HPBar hpBar;
     [SerializeField] private SPBar spBar;
+    [Header("メッセージウィンドウ")]
+    [SerializeField] private GameObject messageWindow;
+    [SerializeField] private TextMeshProUGUI messageText;
+    [SerializeField] private Button nextButton;
 
     private void Awake(){
         // まず親（自分）から取得し、無ければ子を探索する
@@ -28,6 +35,12 @@ public class UIManager : MonoBehaviour {
             hpBar = GetComponent<HPBar>() ?? GetComponentInChildren<HPBar>(true);
         if (spBar == null)
             spBar = GetComponent<SPBar>() ?? GetComponentInChildren<SPBar>(true);
+
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+
+        if (messageWindow != null)
+            messageWindow.SetActive(false);
 
         // シーンロードイベント登録
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -58,6 +71,25 @@ public class UIManager : MonoBehaviour {
             }
         }
     }
+    public void ShowMessage(string text){
+        if (messageWindow == null || messageText == null) return;
+
+        messageWindow.SetActive(true);
+        messageText.text = text;
+
+        if (nextButton != null){
+            nextButton.gameObject.SetActive(true);
+            nextButton.onClick.RemoveAllListeners();
+            nextButton.onClick.AddListener(() => HideMessage());
+        }
+    }
+
+    public void HideMessage(){
+        if (messageWindow == null) return;
+        messageWindow.SetActive(false);
+    }
+
+    public bool IsMessageOpen => messageWindow != null && messageWindow.activeSelf;
 
     // ===== 外部更新メソッド =====
 

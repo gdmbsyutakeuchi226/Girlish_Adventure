@@ -50,6 +50,11 @@ public class GameManager : MonoBehaviour {
     public void GoToTitle(){
         SceneManager.LoadSceneAsync("Title");
     }
+    public void GoResult(string resultSceneName){
+        SceneManager.LoadSceneAsync(resultSceneName);
+    }
+
+
 
     // ===== サウンド操作 =====
 
