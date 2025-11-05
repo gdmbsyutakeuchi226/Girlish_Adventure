@@ -1,4 +1,12 @@
-﻿using UnityEngine;
+﻿/* =======================================
+ * ファイル名 : DialogueTrigger.cs
+ * 概要 : ダイアログトリガースクリプト
+ * Create Date : 2025/11/05
+ * Date : 2025/11/05
+ * Version : 0.01
+ * 更新内容 : 新規作成
+ * ======================================= */
+using UnityEngine;
 
 public class DialogueTrigger : MonoBehaviour {
     [SerializeField] private DialogueData dialogueData;

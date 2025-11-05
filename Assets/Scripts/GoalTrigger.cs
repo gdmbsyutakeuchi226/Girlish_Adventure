@@ -1,4 +1,12 @@
-﻿using UnityEngine;
+﻿/* =======================================
+ * ファイル名 : GoalTrigger.cs
+ * 概要 : ゴール処理スクリプト
+ * Create Date : 2025/10/24
+ * Date : 2025/11/05
+ * Version : 0.02
+ * 更新内容 : リニューアル
+ * ======================================= */
+using UnityEngine;
 using System.Collections;
 
 public class GoalTrigger : MonoBehaviour {

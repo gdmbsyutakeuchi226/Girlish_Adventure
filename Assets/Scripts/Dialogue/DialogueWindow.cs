@@ -1,92 +1,86 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
+﻿/* =======================================
+ * ファイル名 : DialogueWindow.cs
+ * 概要 : ダイアログスクリプト
+ * Create Date : 2025/11/05
+ * Date : 2025/11/05
+ * Version : 0.01
+ * 更新内容 : 新規作成
+ * ======================================= */
+using UnityEngine;
 using TMPro;
 using System.Collections;
-using System;
+using UnityEngine.UI;
 
 public class DialogueWindow : MonoBehaviour {
-    [Header("UI参照")]
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private TextMeshProUGUI dialogueText;
-    [SerializeField] private GameObject windowRoot;
-    [SerializeField] private float typeSpeed = 0.03f;
+    [SerializeField] private GameObject nextIcon;
+    [SerializeField] private float typeSpeed = 0.02f;
 
     private DialogueData currentData;
-    private int currentIndex = 0;
-    private bool isTyping = false;
-    private bool isWaiting = false;
-    private Action onDialogueEnd; // 終了後のコールバック
+    private int currentIndex;
+    private bool isTyping;
+    private bool waitingForNext;
+    private int linesPerPage = 3; // ←★ 1ページ3行表示
 
-    private GameManager gameManager => GameManager.Instance;
-
-    private void Start(){
-        windowRoot.SetActive(false);
-    }
-
-    public void StartDialogue(DialogueData data, Action onEnd = null){
-        if (data == null) return;
-
-        // 会話開始時はゲームを一時停止
-        gameManager.SetGamePaused(true);
-
+    public void StartDialogue(DialogueData data){
         currentData = data;
         currentIndex = 0;
-        onDialogueEnd = onEnd;
-        windowRoot.SetActive(true);
-
-        ShowNextLine();
+        ShowNextPage();
     }
 
-    private void Update(){
-        if (!windowRoot.activeSelf) return;
+    private void ShowNextPage(){
+        if (currentData == null) return;
 
-        if (Input.GetKeyDown(KeyCode.Z) || Input.GetButtonDown("Submit")){
-            if (isTyping){
-                // タイプ中ならスキップして全文表示
-                StopAllCoroutines();
-                dialogueText.text = currentData.lines[currentIndex].text;
-                isTyping = false;
-                isWaiting = true;
-            }else if (isWaiting){
-                // ページ送り
-                currentIndex++;
-                ShowNextLine();
-            }
-        }
-    }
+        // ページに含める行をまとめる
+        string combinedText = "";
+        int linesThisPage = 0;
 
-    private void ShowNextLine(){
-        if (currentData == null || currentIndex >= currentData.lines.Length){
-            EndDialogue();
-            return;
+        while (currentIndex < currentData.lines.Length && linesThisPage < linesPerPage){
+            var line = currentData.lines[currentIndex];
+            if (linesThisPage == 0)
+                nameText.text = line.characterName; // 先頭のキャラ名をセット
+
+            combinedText += line.text + "\n";
+            currentIndex++;
+            linesThisPage++;
         }
 
-        var line = currentData.lines[currentIndex];
-        nameText.text = line.characterName;
-        StartCoroutine(TypeText(line.text));
+        StopAllCoroutines();
+        StartCoroutine(TypeText(combinedText.TrimEnd()));
     }
 
     private IEnumerator TypeText(string text){
-        isTyping = true;
-        isWaiting = false;
         dialogueText.text = "";
+        isTyping = true;
+        waitingForNext = false;
 
         foreach (char c in text){
             dialogueText.text += c;
-            if (c != ' ' && c != '\n'){
-                gameManager.PlaySE(3); // タイプ音ID例
-            }
             yield return new WaitForSeconds(typeSpeed);
         }
 
         isTyping = false;
-        isWaiting = true;
+        waitingForNext = true;
+        nextIcon.SetActive(true);
+    }
+
+    private void Update(){
+        if (waitingForNext && Input.GetButtonDown("Submit")){
+            nextIcon.SetActive(false);
+            waitingForNext = false;
+
+            if (currentIndex >= currentData.lines.Length){
+                EndDialogue();
+            }else{
+                ShowNextPage();
+            }
+        }
     }
 
     private void EndDialogue(){
-        windowRoot.SetActive(false);
-        currentData = null;
-        onDialogueEnd?.Invoke(); // イベントコール
-        gameManager.SetGamePaused(false); // ゲーム再開
+        dialogueText.text = "";
+        nameText.text = "";
+        gameObject.SetActive(false);
     }
 }
