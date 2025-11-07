@@ -18,5 +18,5 @@ MonoBehaviour:
   sp: 6
   coin: 0
   moveSpeed: 7
-  jumpForce: 15
+  jumpForce: 13
   gravity: -50
