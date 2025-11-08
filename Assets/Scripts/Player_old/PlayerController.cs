@@ -75,7 +75,7 @@ public class PlayerController : MonoBehaviour{
     private Collider2D currentLadderCollider; // 侵入中の梯子のコライダー
     private float ladderSnapCenterX = 0f;      // スナップ用のX中心
     private bool lockXOnLadder = false;        // 登り中にXを固定するか
-    private PlayerInput playerInput;
+    private PlayerInput playerInput_old;
     public delegate void OnDamageDelegate();
     public event OnDamageDelegate OnDamage;
 
@@ -91,7 +91,7 @@ public class PlayerController : MonoBehaviour{
 
         if (!animator) animator = GetComponent<Animator>();
         if (!spriteRenderer) spriteRenderer = GetComponent<SpriteRenderer>();
-        playerInput = GetComponent<PlayerInput>();
+        playerInput_old = GetComponent<PlayerInput>();
     }
 
     private void Start(){
@@ -116,27 +116,27 @@ public class PlayerController : MonoBehaviour{
         // PlayerData内でUI更新
         playerData.SyncUI();
     }
-
+    /*
     private void OnEnable(){
-        if (playerInput == null) playerInput = GetComponent<PlayerInput>();
-        if (playerInput != null){
+        if (playerInput_old == null) playerInput_old = GetComponent<PlayerInput>();
+        if (playerInput_old != null){
             // Inspector の UnityEvents が未設定でも動くよう、コードで配線
-            playerInput.onActionTriggered += HandleActionTriggered;
+            //playerInput_old.onActionTriggered += HandleActionTriggered;
 
             // 常に Player マップを有効化
-            if (playerInput.currentActionMap == null || playerInput.currentActionMap.name != "Player")
-                playerInput.SwitchCurrentActionMap("Player");
+            if (playerInput_old.currentActionMap == null || playerInput_old.currentActionMap.name != "Player")
+                playerInput_old.SwitchCurrentActionMap("Player");
 
-            if (!playerInput.actions.enabled)
-                playerInput.actions.Enable();
+            if (!playerInput_old.actions.enabled)
+                playerInput_old.actions.Enable();
         }
     }
 
     private void OnDisable(){
-        if (playerInput != null)
-            playerInput.onActionTriggered -= HandleActionTriggered;
+        if (playerInput_old != null)
+            playerInput_old.onActionTriggered -= HandleActionTriggered;
     }
-
+    */
     private void Update(){
         if (isDead) return;
 
