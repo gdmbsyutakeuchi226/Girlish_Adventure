@@ -2,9 +2,9 @@
  * ファイル名 : PlayerController.cs
  * 概要 : プレイヤースクリプト
  * Created Date : 2025/10/01
- * Date : 2025/10/24
- * Version : 0.04
- * 更新内容 : AddForce除外
+ * Date : 2025/11/09
+ * Version : 0.05
+ * 更新内容 : 各動作の分割
  * ======================================= */
 using System.Collections;
 using System.Collections.Generic;
